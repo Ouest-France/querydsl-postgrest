@@ -190,17 +190,10 @@ The QueryDSL is licensed under [MIT License](https://opensource.org/license/mit/
 
 
 [maven-build-image]: https://github.com/Ouest-France/querydsl-postgrest/actions/workflows/build.yml/badge.svg
-
 [maven-build-url]: https://github.com/Ouest-France/querydsl-postgrest/actions/workflows/build.yml
-
-[coverage-image]: https://codecov.io/gh/ouest-france/querydsl-postgrest/graph/badge.svg?token=OSDY72YC4E
-
+[coverage-image]: https://codecov.io/gh/ouest-france/querydsl-postgrest/graph/badge.svg
 [coverage-url]: https://codecov.io/gh/ouest-france/querydsl-postgrest
-
 [maven-central-image]: https://maven-badges.herokuapp.com/maven-central/fr.ouestfrance.querydsl/querydsl-postgrest/badge.svg
-
-[maven-central-url]: http://search.maven.org/#search%7Cga%7C1%7Cfr.ouestfrance.querydsl
-
+[maven-central-url]: https://mvnrepository.com/artifact/fr.ouestfrance.querydsl/querydsl-postgrest
 [sonar-image]: https://sonarcloud.io/api/project_badges/measure?project=Ouest-France_querydsl-postgrest&metric=alert_status
-
 [sonar-url]: https://sonarcloud.io/summary/new_code?id=Ouest-France_querydsl-postgrest
