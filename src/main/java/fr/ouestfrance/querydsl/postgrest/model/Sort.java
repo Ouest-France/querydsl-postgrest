@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Sort option for queries. You have to provide at least a list of properties to sort
@@ -41,10 +40,8 @@ public class Sort {
      */
     public static Sort by(Direction direction, String... properties) {
         return new Sort(Arrays.stream(properties)
-                .map(x -> switch (direction) {
-                    case ASC -> Order.asc(x);
-                    case DESC -> Order.desc(x);
-                }).toList());
+                .map(x -> new Order(x, direction, NullHandling.NATIVE))
+                .toList());
     }
 
     /**

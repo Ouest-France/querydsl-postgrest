@@ -45,11 +45,11 @@ class PostgrestRepositoryGetTest {
 
 
     @SuppressWarnings("unchecked")
-    private static ArgumentCaptor<MultiValueMap<String, Object>> queriesCaptor() {
+    private ArgumentCaptor<MultiValueMap<String, Object>> queriesCaptor() {
         return ArgumentCaptor.forClass(MultiValueMap.class);
     }
     @SuppressWarnings("unchecked")
-    private static ArgumentCaptor<Map<String, Object>> headersCaptor() {
+    private ArgumentCaptor<Map<String, Object>> headersCaptor() {
         return ArgumentCaptor.forClass(Map.class);
     }
 
@@ -58,6 +58,7 @@ class PostgrestRepositoryGetTest {
         when(postgrestClient.search(anyString(), any(), anyMap())).thenReturn(ok(List.of(new Post(), new Post())));
         Page<Post> search = repository.search(null);
         assertNotNull(search);
+        assertNotNull(search.iterator());
         assertEquals(2, search.size());
     }
 

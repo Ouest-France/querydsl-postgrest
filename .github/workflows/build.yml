@@ -25,8 +25,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn -ntp -B package --file pom.xml
       - name: Code Coverage
         uses: codecov/codecov-action@v3
         with:
@@ -37,9 +38,9 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_PROJECT: Ouest-France_${{ github.event.repository.name }}
-        run: mvn -B package sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }} -Dsonar.projectKey=$SONAR_PROJECT -Dsonar.branch.name=${GITHUB_REF##*/}
+        run: mvn -ntp -B sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }} -Dsonar.projectKey=$SONAR_PROJECT -Dsonar.branch.name=${GITHUB_REF##*/}
       - name: Deploy Snapshot
-        run: mvn deploy -B -s .github/deploy_settings.xml
+        run: mvn -ntp -B  -s .github/deploy_settings.xml deploy -DskipTests=true
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}

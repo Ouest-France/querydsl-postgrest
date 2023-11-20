@@ -33,6 +33,7 @@ public interface PostgrestClient {
      *
      * @param resource resource name
      * @param value    data to save
+     * @param headers  headers to pass
      * @return list of inserted objects
      */
     @PostExchange
@@ -42,8 +43,9 @@ public interface PostgrestClient {
      * Patch data
      *
      * @param resource resource name
-     * @param params criteria to apply on patch
+     * @param params   criteria to apply on patch
      * @param value    object to patch
+     * @param headers  headers to pass
      * @return list of patched objects
      */
     @PatchExchange
@@ -54,6 +56,7 @@ public interface PostgrestClient {
      *
      * @param resource resource name
      * @param params   query params
+     * @param headers  headers to pass
      * @return list of deleted objects
      */
     @DeleteExchange

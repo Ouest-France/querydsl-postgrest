@@ -24,6 +24,7 @@ You can write your own connector implementation by adding this library to your c
 Add the following dependency to your Maven project:
 
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest</artifactId>
@@ -87,7 +88,9 @@ Mapping to object is based on jackson ObjectMapper that allow you to configure :
 
 #### Specify your first search criteria
 
-You can start by writing the first search object using `@FilterField` annotations. This example allow you to search user with :
+You can start by writing the first search object using `@FilterField` annotations. This example allow you to search user
+with :
+
 - equals filter on id key
 - like filter on name key
 
@@ -109,18 +112,25 @@ public static class UserSearch {
 
 To access data, you have to create Repository for your type and put `@PostgrestConfiguration` to specify extra data
 
-| Property | Required | Format   | description                                 |
-|----------|----------|----------|---------------------------------------------|
-| resource | O        | String   | Resource name  in the postgrest api         |
-| embedded | X        | String[] | Sub resources embedded in the main resource |
+| Property      | Required | Format   | Description                                                 | Example                                                               |
+|---------------|----------|----------|-------------------------------------------------------------|-----------------------------------------------------------------------|
+| resource      | O        | String   | Resource name  in the postgrest api                         | "users"                                                               |
+| embedded      | X        | String[] | Sub resources embedded in the main resource                 | ["phone", "address"]                                                  |
+| deleteHeaders | X        | String[] | Prefers values to pass to the delete methods                | @Header(key="Prefer", value={"tx=rollback", "return=representation"}) |
+| upsertHeaders | X        | String[] | Prefers values to pass to the upsert methods                | @Header(key="Prefer", value="resolution=merge-duplicates")            |
+| patchHeaders  | X        | String[] | Prefers values to pass to the patch methods                 | @Header(key="Prefer", value="return=representation")                  |
+| countStrategy | O        | String   | Count strategy (exact, planned, estimated) default is exact | CountType.EXACT                                                       |
 
 ```java
 @PostgrestConfiguration(resource = "users")
-public class UserRepository extends PostgrestRepository<User> { }
+public class UserRepository extends PostgrestRepository<User> {
+}
 ```
 
 ### Using the repository
-You can then create your functions : 
+
+You can then create your functions :
+
 - getUserById : Will return user with a specific id or raise a NotFoundException
 - findUsersByName : Will return list of users which name contains part of search content
 
@@ -180,10 +190,17 @@ The QueryDSL is licensed under [MIT License](https://opensource.org/license/mit/
 
 
 [maven-build-image]: https://github.com/Ouest-France/querydsl-postgrest/actions/workflows/build.yml/badge.svg
+
 [maven-build-url]: https://github.com/Ouest-France/querydsl-postgrest/actions/workflows/build.yml
-[coverage-image]: https://raw.githubusercontent.com/Ouest-France/querydsl-postgrest/main/.github/badges/jacoco.svg
+
+[coverage-image]: https://codecov.io/gh/ouest-france/querydsl-postgrest/graph/badge.svg?token=OSDY72YC4E
+
 [coverage-url]: https://codecov.io/gh/ouest-france/querydsl-postgrest
+
 [maven-central-image]: https://maven-badges.herokuapp.com/maven-central/fr.ouestfrance.querydsl/querydsl-postgrest/badge.svg
+
 [maven-central-url]: http://search.maven.org/#search%7Cga%7C1%7Cfr.ouestfrance.querydsl
+
 [sonar-image]: https://sonarcloud.io/api/project_badges/measure?project=Ouest-France_querydsl-postgrest&metric=alert_status
+
 [sonar-url]: https://sonarcloud.io/summary/new_code?id=Ouest-France_querydsl-postgrest

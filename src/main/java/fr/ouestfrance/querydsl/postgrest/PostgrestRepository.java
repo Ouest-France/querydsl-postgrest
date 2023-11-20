@@ -1,6 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
@@ -14,12 +15,8 @@ import org.springframework.core.GenericTypeResolver;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.servlet.function.ServerRequest;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Postgrest repository implementation
@@ -37,7 +34,6 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
     private ObjectMapper objectMapper;
     @Autowired
     private PostgrestClient webClient;
-
 
     /**
      * Constructor
@@ -60,7 +56,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
         if (pageable.getPageSize() > 0) {
             headers.put(Headers.RANGE_UNIT, "items");
             headers.put(Headers.RANGE, pageable.toRange());
-            headers.put(Headers.PREFER, "count=exact");
+            headers.put(Headers.PREFER, "count=" + annotation.countStrategy().name().toLowerCase());
         }
         // Add sort if present
         if (pageable.getSort() != null) {
@@ -85,8 +81,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public List<T> upsert(List<Object> values) {
-        MultiValueMap<String, Object> headers = new LinkedMultiValueMap<>();
-        headers.add(Headers.PREFER, annotation.upsertHeaders());
+        MultiValueMap<String, Object> headers = headerMap(annotation.upsertHeaders());
         return webClient.post(annotation.resource(), values, headers).stream()
                 .map(this::toEntity).toList();
     }
@@ -94,8 +89,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public List<T> patch(Object criteria, Object body) {
-        MultiValueMap<String, Object> headers = new LinkedMultiValueMap<>();
-        headers.add(Headers.PREFER, annotation.upsertHeaders());
+        MultiValueMap<String, Object> headers = headerMap(annotation.patchHeaders());
         List<Filter> queryParams = processorService.process(criteria);
         return webClient.patch(resourceName(), toMap(queryParams), body, headers)
                 .stream().map(this::toEntity)
@@ -105,8 +99,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public List<T> delete(Object criteria) {
-        MultiValueMap<String, Object> headers = new LinkedMultiValueMap<>();
-        headers.add(Headers.PREFER, annotation.deleteHeaders());
+        MultiValueMap<String, Object> headers = headerMap(annotation.deleteHeaders());
         List<Filter> queryParams = processorService.process(criteria);
         return webClient.delete(annotation.resource(), toMap(queryParams), headers).stream()
                 .map(this::toEntity).toList();
@@ -127,6 +120,18 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
     private MultiValueMap<String, Object> toMap(List<Filter> filters) {
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
         filters.forEach(x -> map.add(x.getKey(), x.getFilterString()));
+        return map;
+    }
+
+    /**
+     * Transforms headers to multimap values
+     *
+     * @param headers headers array
+     * @return multimap value of headers
+     */
+    private MultiValueMap<String, Object> headerMap(Header[] headers) {
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        Arrays.stream(headers).forEach(header -> map.addAll(header.key(), Arrays.stream(header.value()).toList()));
         return map;
     }
 

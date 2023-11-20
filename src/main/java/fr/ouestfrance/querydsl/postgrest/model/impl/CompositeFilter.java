@@ -41,14 +41,12 @@ public class CompositeFilter implements Filter, FilterVisitor {
      *
      * @param operator type of composite operator (or, and, not)
      * @param left     first filter (required)
-     * @param right    second filter (required)
      * @param others   others filters (optional)
      * @return composite filter
      */
-    public static CompositeFilter of(String operator, Filter left, Filter right, Filter... others) {
+    public static CompositeFilter of(String operator, Filter left,  Filter... others) {
         CompositeFilter filter = new CompositeFilter(operator);
         filter.filters.add(left);
-        filter.filters.add(right);
         if (others != null) {
             filter.filters.addAll(Arrays.stream(others).toList());
         }
