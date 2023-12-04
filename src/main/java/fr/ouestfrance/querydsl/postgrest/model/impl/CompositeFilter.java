@@ -1,12 +1,14 @@
 package fr.ouestfrance.querydsl.postgrest.model.impl;
 
 
+import fr.ouestfrance.querydsl.model.GroupFilter;
 import fr.ouestfrance.querydsl.postgrest.builders.FilterVisitor;
 import fr.ouestfrance.querydsl.postgrest.builders.QueryFilterVisitor;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +52,18 @@ public class CompositeFilter implements Filter, FilterVisitor {
         if (others != null) {
             filter.filters.addAll(Arrays.stream(others).toList());
         }
+        return filter;
+    }
+
+    /**
+     * Create a composite filter from a list of filters and an operator
+     * @param operator logical operator
+     * @param filters list of filter
+     * @return composite filter
+     */
+    public static Filter of(String operator, List<Filter> filters) {
+        CompositeFilter filter = new CompositeFilter(operator);
+        filter.filters.addAll(filters);
         return filter;
     }
 

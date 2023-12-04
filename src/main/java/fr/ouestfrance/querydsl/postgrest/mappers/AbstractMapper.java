@@ -1,9 +1,9 @@
 package fr.ouestfrance.querydsl.postgrest.mappers;
 
-import fr.ouestfrance.querydsl.model.FilterFieldInfoModel;
+import fr.ouestfrance.querydsl.model.SimpleFilter;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.CompositeFilter;
-import fr.ouestfrance.querydsl.postgrest.model.impl.SimpleFilter;
+import fr.ouestfrance.querydsl.postgrest.model.impl.QueryFilter;
 import fr.ouestfrance.querydsl.service.ext.Mapper;
 
 /**
@@ -12,14 +12,13 @@ import fr.ouestfrance.querydsl.service.ext.Mapper;
 public abstract class AbstractMapper implements Mapper<Filter> {
 
 
-
     @Override
-    public Filter map(FilterFieldInfoModel filterField, Object data) {
-        Filter filter = getFilter(filterField.getKey(), data);
-        if (filterField.isOrNull()) {
+    public Filter map(SimpleFilter filterField, Object data) {
+        Filter filter = getFilter(filterField.key(), data);
+        if (filterField.orNull()) {
             return CompositeFilter.of(Operators.OR,
                     filter,
-                    SimpleFilter.of(filterField.getKey(), Operators.IS, null)
+                    QueryFilter.of(filterField.key(), Operators.IS, null)
             );
         }
         return filter;
@@ -27,6 +26,7 @@ public abstract class AbstractMapper implements Mapper<Filter> {
 
     /**
      * Get concrete filter for mapper
+     *
      * @param field fieldName
      * @param value value to bind
      * @return filter

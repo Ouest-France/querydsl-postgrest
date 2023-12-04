@@ -7,7 +7,6 @@ import jakarta.annotation.Nonnull;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * Repository interface
@@ -18,6 +17,7 @@ public interface Repository<T> {
 
     /**
      * Resource name of the repository
+     *
      * @return resourceName of the repository
      */
     String resourceName();
@@ -91,8 +91,9 @@ public interface Repository<T> {
 
     /**
      * Update multiple body
-     * @param  criteria criteria data
-     * @param body to update
+     *
+     * @param criteria criteria data
+     * @param body     to update
      * @return list of patched object
      */
     List<T> patch(Object criteria, Object body);

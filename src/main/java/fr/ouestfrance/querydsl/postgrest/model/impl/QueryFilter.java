@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class SimpleFilter implements Filter, FilterVisitor {
+public class QueryFilter implements Filter, FilterVisitor {
 
     /**
      * Field name
@@ -36,7 +36,7 @@ public class SimpleFilter implements Filter, FilterVisitor {
      * @return Simple filter
      */
     public static Filter of(String fieldName, String operator, Object value) {
-        return new SimpleFilter(fieldName, operator, value);
+        return new QueryFilter(fieldName, operator, value);
     }
 
     @Override

@@ -20,10 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("ALL")
-@ExtendWith(MockitoExtension.class)
 @Slf4j
-class PostgrestRepositoryPatchTest {
+class PostgrestRepositoryPatchTest extends AbstractRepositoryMockTest{
 
     @InjectMocks
     private PostgrestRepository<Post> repository = new PostRepository();
@@ -34,22 +32,22 @@ class PostgrestRepositoryPatchTest {
     @Mock
     private ObjectMapper mapper;
 
-    @SuppressWarnings("unchecked")
-    private static ArgumentCaptor<MultiValueMap<String, Object>> queriesCaptor() {
-        return ArgumentCaptor.forClass(MultiValueMap.class);
-    }
+
 
     @Test
     void shouldDelete() {
-        ArgumentCaptor<MultiValueMap<String, Object>> queriesCaptor = queriesCaptor();
+        ArgumentCaptor<MultiValueMap<String, Object>> queriesCaptor = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, Object>> headerCaptor = multiMapCaptor();
         Post post = new Post();
         post.setUserId(26);
-        when(postgrestClient.patch(anyString(), queriesCaptor.capture(), eq(post), any())).thenReturn(List.of(post));
+        when(postgrestClient.patch(anyString(), queriesCaptor.capture(), eq(post), headerCaptor.capture())).thenReturn(List.of(post));
         when(mapper.convertValue(any(), eq(Post.class))).thenReturn(post);
         List<Post> patched = repository.patch(new PostDeleteRequest(List.of("1", "2")), post);
         assertNotNull(patched);
         assertEquals(1, patched.size());
         MultiValueMap<String, Object> queries = queriesCaptor.getValue();
         assertEquals("in.(1,2)", queries.getFirst("id"));
+        MultiValueMap<String, Object> headers = headerCaptor.getValue();
+        assertEquals("return=representation", headers.getFirst("Prefer"));
     }
 }

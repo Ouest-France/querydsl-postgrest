@@ -5,12 +5,7 @@ import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
 
-import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
-
 @PostgrestConfiguration(resource = "posts")
-@Select("authors(*)")
-@Header(key = "Prefer", value = "return=representation")
-@Header(key = "Prefer", value = {"tx=rollback", "resolution=merge-duplicates"}, methods = UPSERT)
-public class PostRepository extends PostgrestRepository<Post> {
+public class SimpleRepository extends PostgrestRepository<Post> {
 
 }

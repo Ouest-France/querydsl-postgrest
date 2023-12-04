@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.util.MultiValueMap;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,10 +21,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("ALL")
-@ExtendWith(MockitoExtension.class)
 @Slf4j
-class PostgrestRepositoryUpsertTest {
+class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
 
     @InjectMocks
     private PostgrestRepository<Post> repository = new PostRepository();
@@ -34,32 +33,37 @@ class PostgrestRepositoryUpsertTest {
     @Mock
     private ObjectMapper mapper;
 
-    private ObjectMapper realMapper = new ObjectMapper();
+    private final ObjectMapper realMapper = new ObjectMapper();
 
 
     @Test
     void shouldUpsert() {
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Object>> postCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<MultiValueMap<String, Object>> headerCaptor = multiMapCaptor();
         String generateId = UUID.randomUUID().toString();
 
         Post save = new Post();
         save.setTitle("title");
         save.setBody("test");
 
-        when(postgrestClient.post(anyString(), postCaptor.capture(), any())).thenAnswer(x->{
+        when(postgrestClient.post(anyString(), postCaptor.capture(), headerCaptor.capture())).thenAnswer(x -> {
             Post post = new Post();
             post.setId(generateId);
             post.setTitle(save.getTitle());
             post.setBody(save.getBody());
             return List.of(post);
         });
-        when(mapper.convertValue(any(), eq(Post.class))).thenAnswer(x->realMapper.convertValue(x.getArguments()[0], Post.class));
-        Post saved =  repository.upsert(save);
+        when(mapper.convertValue(any(), eq(Post.class))).thenAnswer(x -> realMapper.convertValue(x.getArguments()[0], Post.class));
+        Post saved = repository.upsert(save);
         assertNotNull(saved);
 
         assertEquals(1, postCaptor.getValue().size());
         assertEquals(generateId, saved.getId());
         assertEquals(save.getBody(), saved.getBody());
         assertEquals(save.getTitle(), saved.getTitle());
+        MultiValueMap<String, Object> headers = headerCaptor.getValue();
+        assertEquals(3, headers.get("Prefer").size());
+        assertEquals("return=representation", headers.getFirst("Prefer"));
     }
 }

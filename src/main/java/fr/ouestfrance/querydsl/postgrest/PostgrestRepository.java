@@ -1,7 +1,9 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
+import fr.ouestfrance.querydsl.postgrest.annotations.Select;
 import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
@@ -29,6 +31,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
     private final QueryDslProcessorService<Filter> processorService = new PostgrestQueryProcessorService();
     private final PostgrestConfiguration annotation;
     private final Class<T> clazz;
+    private final Map<Header.Method, MultiValueMap<String, Object>> headersMap = new EnumMap<>(Header.Method.class);
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -44,6 +47,14 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
                     "Missing annotation " + PostgrestConfiguration.class.getSimpleName());
         }
         annotation = getClass().getAnnotation(PostgrestConfiguration.class);
+
+        // Create headerMap
+        Arrays.stream(getClass().getAnnotationsByType(Header.class)).forEach(header -> Arrays.stream(header.methods())
+                .forEach(method ->
+                        headersMap.computeIfAbsent(method, x -> new LinkedMultiValueMap<>())
+                                .addAll(header.key(), Arrays.asList(header.value()))
+                )
+        );
         //noinspection unchecked
         clazz = (Class<T>) GenericTypeResolver.resolveTypeArgument(getClass(), PostgrestRepository.class);
     }
@@ -51,26 +62,24 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
     @Override
     public Page<T> search(Object criteria, @Nonnull Pageable pageable) {
         List<Filter> queryParams = processorService.process(criteria);
-        Map<String, Object> headers = new HashMap<>();
+        MultiValueMap<String, Object> headers = headersMap.get(Header.Method.GET);
         // Add pageable if present
         if (pageable.getPageSize() > 0) {
-            headers.put(Headers.RANGE_UNIT, "items");
-            headers.put(Headers.RANGE, pageable.toRange());
-            headers.put(Headers.PREFER, "count=" + annotation.countStrategy().name().toLowerCase());
+            headers.add("Range-Unit", "items");
+            headers.add("Range", pageable.toRange());
+            headers.add("Prefers", "count=" + annotation.countStrategy().name().toLowerCase());
         }
         // Add sort if present
         if (pageable.getSort() != null) {
             queryParams.add(OrderFilter.of(pageable.getSort()));
         }
         // Add select criteria
-        if (annotation.embedded().length > 0) {
-            queryParams.add(SelectFilter.of(annotation.embedded()));
-        }
+        getSelects(criteria).ifPresent(queryParams::add);
         ResponseEntity<List<Object>> response = webClient.search(annotation.resource(), toMap(queryParams), headers);
         // Retrieve result headers
         return Optional.ofNullable(response.getBody()).map(x -> {
             PageImpl<Object> page = new PageImpl<>(x, pageable, x.size(), 1);
-            List<String> contentRangeHeaders = response.getHeaders().get(Headers.CONTENT_RANGE);
+            List<String> contentRangeHeaders = response.getHeaders().get("Content-Range");
             if (contentRangeHeaders != null && !contentRangeHeaders.isEmpty()) {
                 Range range = Range.of(contentRangeHeaders.stream().findFirst().toString());
                 page.withRange(range);
@@ -81,17 +90,17 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public List<T> upsert(List<Object> values) {
-        MultiValueMap<String, Object> headers = headerMap(annotation.upsertHeaders());
-        return webClient.post(annotation.resource(), values, headers).stream()
+        return webClient.post(annotation.resource(), values, headersMap.get(Header.Method.UPSERT)).stream()
                 .map(this::toEntity).toList();
     }
 
 
     @Override
     public List<T> patch(Object criteria, Object body) {
-        MultiValueMap<String, Object> headers = headerMap(annotation.patchHeaders());
         List<Filter> queryParams = processorService.process(criteria);
-        return webClient.patch(resourceName(), toMap(queryParams), body, headers)
+        // Add select criteria
+        getSelects(criteria).ifPresent(queryParams::add);
+        return webClient.patch(resourceName(), toMap(queryParams), body, headersMap.get(Header.Method.PATCH))
                 .stream().map(this::toEntity)
                 .toList();
     }
@@ -99,9 +108,10 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public List<T> delete(Object criteria) {
-        MultiValueMap<String, Object> headers = headerMap(annotation.deleteHeaders());
         List<Filter> queryParams = processorService.process(criteria);
-        return webClient.delete(annotation.resource(), toMap(queryParams), headers).stream()
+        // Add select criteria
+        getSelects(criteria).ifPresent(queryParams::add);
+        return webClient.delete(annotation.resource(), toMap(queryParams), headersMap.get(Header.Method.DELETE)).stream()
                 .map(this::toEntity).toList();
     }
 
@@ -123,16 +133,29 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
         return map;
     }
 
+
     /**
-     * Transforms headers to multimap values
+     * Extract selection on criteria and class
      *
-     * @param headers headers array
-     * @return multimap value of headers
+     * @param criteria search criteria
+     * @return attributes
      */
-    private MultiValueMap<String, Object> headerMap(Header[] headers) {
-        MultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
-        Arrays.stream(headers).forEach(header -> map.addAll(header.key(), Arrays.stream(header.value()).toList()));
-        return map;
+    private Optional<Filter> getSelects(Object criteria) {
+        List<SelectFilter.Attribute> attributes = new ArrayList<>();
+        Select[] clazzAnnotation = getClass().getAnnotationsByType(Select.class);
+        if (clazzAnnotation.length > 0) {
+            attributes.addAll(Arrays.stream(clazzAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value())).toList());
+        }
+        if (criteria != null) {
+            Select[] criteriaAnnotation = criteria.getClass().getAnnotationsByType(Select.class);
+            if (criteriaAnnotation.length > 0) {
+                attributes.addAll(Arrays.stream(criteriaAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value())).toList());
+            }
+        }
+        if (attributes.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(SelectFilter.of(attributes));
     }
 
 

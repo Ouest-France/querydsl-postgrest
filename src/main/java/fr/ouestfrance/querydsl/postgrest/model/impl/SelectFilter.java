@@ -7,6 +7,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 /**
  * Select filter allow to describe a selection
  */
@@ -19,18 +21,18 @@ public class SelectFilter implements Filter, FilterVisitor {
      */
     private static final String KEY_PARAMETER = "select";
     /**
-     * List of embedded items
+     * alias
      */
-    private final String[] embedded;
+    private final List<Attribute> selectAttributes;
 
     /**
      * Create select filter from embedded resources
      *
-     * @param embedded name of the sub resources
+     * @param selectAttributes selectAttributes of the selection (can be empty)
      * @return select filter
      */
-    public static Filter of(String[] embedded) {
-        return new SelectFilter(embedded);
+    public static Filter of(List<Attribute> selectAttributes) {
+        return new SelectFilter(selectAttributes);
     }
 
     @Override
@@ -43,4 +45,21 @@ public class SelectFilter implements Filter, FilterVisitor {
         return KEY_PARAMETER;
     }
 
+
+    /**
+     * Attribute name
+     */
+    @Getter
+    @RequiredArgsConstructor
+    public static class Attribute {
+        /**
+         * alias
+         */
+        private final String alias;
+        /**
+         * value selected
+         */
+        private final String value;
+
+    }
 }

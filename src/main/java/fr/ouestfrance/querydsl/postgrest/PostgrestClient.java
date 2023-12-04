@@ -26,7 +26,7 @@ public interface PostgrestClient {
      */
     @GetExchange
     ResponseEntity<List<Object>> search(@PathVariable String resource, @RequestParam MultiValueMap<String, Object> params,
-                                        @RequestHeader Map<String, Object> headers);
+                                        @RequestHeader MultiValueMap<String, Object> headers);
 
     /**
      * Save body

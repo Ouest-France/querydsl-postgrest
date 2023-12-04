@@ -11,7 +11,7 @@ public final class Operators {
     /**
      * Equals operation
      */
-    public static final String EQUALS = "eq";
+    public static final String EQUALS_TO = "eq";
     /**
      * Greater than or Equals operation
      */
@@ -35,7 +35,7 @@ public final class Operators {
     /**
      * Like operation
      */
-    public static final String LIKE = "cs";
+    public static final String LIKE = "like";
     /**
      * Not equals operation
      */

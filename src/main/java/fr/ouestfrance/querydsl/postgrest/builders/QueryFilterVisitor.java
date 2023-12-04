@@ -4,10 +4,9 @@ import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.Sort;
 import fr.ouestfrance.querydsl.postgrest.model.impl.CompositeFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
+import fr.ouestfrance.querydsl.postgrest.model.impl.QueryFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
-import fr.ouestfrance.querydsl.postgrest.model.impl.SimpleFilter;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,11 +31,8 @@ public final class QueryFilterVisitor {
      *
      * @param filter simple filter
      */
-    public void visit(SimpleFilter filter) {
-        builder
-                .append(filter.getOperator())
-                .append(QueryFilterVisitor.DOT)
-                .append(filter.getValue());
+    public void visit(QueryFilter filter) {
+        builder.append(filter.getOperator()).append(QueryFilterVisitor.DOT).append(filter.getValue());
     }
 
     /**
@@ -61,8 +57,10 @@ public final class QueryFilterVisitor {
      * @param filter select filter
      */
     public void visit(SelectFilter filter) {
-        builder.append("*,").append(Arrays.stream(filter.getEmbedded()).map(x -> x + "(*)")
-                .collect(Collectors.joining(COMA)));
+        builder.append("*,");
+        builder.append(filter.getSelectAttributes().stream().map(
+                        x -> x.getAlias().isEmpty() ? x.getValue() : x.getAlias() + ":" + x.getValue())
+                .collect(Collectors.joining(",")));
     }
 
     /**
@@ -71,10 +69,15 @@ public final class QueryFilterVisitor {
      * @param filter composite filter
      */
     public void visit(CompositeFilter filter) {
-        builder.append(OPEN_PARENTHESIS);
+        // Check items aliases
         Filter lastElement = getLastElement(filter.getFilters());
+
+        builder.append(OPEN_PARENTHESIS);
         filter.getFilters().forEach(item -> {
-            builder.append(item.getKey()).append(DOT);
+            builder.append(item.getKey());
+            if (item instanceof QueryFilter) {
+                builder.append(DOT);
+            }
             item.accept(this);
             if (!item.equals(lastElement)) {
                 builder.append(COMA);
@@ -95,6 +98,7 @@ public final class QueryFilterVisitor {
 
     /**
      * Return string representation of the queryString
+     *
      * @return string representation of the queryString
      */
     public String getValue() {
