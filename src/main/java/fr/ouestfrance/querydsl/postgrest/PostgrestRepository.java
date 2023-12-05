@@ -31,7 +31,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
     private final ObjectMapper objectMapper;
     private final PostgrestClient webClient;
 
-    protected PostgrestRepository(PostgrestClient webClient, ObjectMapper objectMapper) {
+    public PostgrestRepository(PostgrestClient webClient, ObjectMapper objectMapper) {
         this.webClient = webClient;
         this.objectMapper = objectMapper;
         if (!getClass().isAnnotationPresent(PostgrestConfiguration.class)) {
