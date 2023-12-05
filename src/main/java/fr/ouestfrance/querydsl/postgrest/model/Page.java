@@ -1,6 +1,5 @@
 package fr.ouestfrance.querydsl.postgrest.model;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -29,18 +28,21 @@ public interface Page<T> extends Iterable<T> {
 
     /**
      * Get data for a page
+     *
      * @return data for a page
      */
     List<T> getData();
 
     /**
      * Get page request infomations
+     *
      * @return Pageable information with number of elements, number of the page and sort options
      */
     Pageable getPageable();
 
     /**
      * Get size of page
+     *
      * @return size of the data for the current page
      */
     default int size() {
@@ -49,18 +51,21 @@ public interface Page<T> extends Iterable<T> {
 
     /**
      * Get total elements from the datasource
+     *
      * @return total elements
      */
     long getTotalElements();
 
     /**
      * Get the total pages
+     *
      * @return total pages
      */
     int getTotalPages();
 
     /**
      * Streaming from the page
+     *
      * @return stream
      */
     default Stream<T> stream() {
@@ -74,9 +79,10 @@ public interface Page<T> extends Iterable<T> {
 
     /**
      * Convert a page
+     *
      * @param converter function that convert type to another
+     * @param <U>       type of returned object
      * @return page converted
-     * @param <U> type of returned object
      */
     default <U> Page<U> map(Function<T, U> converter) {
         return new PageImpl<>(stream().map(converter).toList(), getPageable(), getTotalElements(), getTotalPages());

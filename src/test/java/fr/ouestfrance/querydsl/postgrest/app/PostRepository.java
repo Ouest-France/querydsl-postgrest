@@ -6,6 +6,7 @@ import fr.ouestfrance.querydsl.postgrest.PostgrestRepository;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.UPSERT;
 
@@ -15,8 +16,8 @@ import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.UPSERT
 @Header(key = "Prefer", value = {"tx=rollback", "resolution=merge-duplicates"}, methods = UPSERT)
 public class PostRepository extends PostgrestRepository<Post> {
 
-    public PostRepository(PostgrestClient client, ObjectMapper mapper) {
-        super(client, mapper);
+    public PostRepository(PostgrestClient client) {
+        super(client);
     }
 
 }

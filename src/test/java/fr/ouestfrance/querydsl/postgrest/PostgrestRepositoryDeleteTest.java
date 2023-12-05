@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
@@ -29,21 +30,21 @@ class PostgrestRepositoryDeleteTest extends AbstractRepositoryMockTest {
 
     @BeforeEach
     void beforeEach() {
-        repository = new PostRepository(postgrestClient, new ObjectMapper());
+        repository = new PostRepository(postgrestClient);
     }
 
     @Test
     void shouldDelete() {
-        ArgumentCaptor<MultiValueMap<String, Object>> queriesCaptor = multiMapCaptor();
-        ArgumentCaptor<MultiValueMap<String, Object>> headerCaptor = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, String>> queriesCaptor = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, String>> headerCaptor = multiMapCaptor();
         Post deletedPost = new Post();
         when(postgrestClient.delete(anyString(), queriesCaptor.capture(), headerCaptor.capture())).thenReturn(List.of(deletedPost));
         List<Post> delete = repository.delete(new PostDeleteRequest(List.of("1", "2")));
         assertNotNull(delete);
 
-        MultiValueMap<String, Object> queries = queriesCaptor.getValue();
+        MultiValueMap<String, String> queries = queriesCaptor.getValue();
         assertEquals("in.(1,2)", queries.getFirst("id"));
-        MultiValueMap<String, Object> headers = headerCaptor.getValue();
+        MultiValueMap<String, String> headers = headerCaptor.getValue();
         assertEquals("return=representation", headers.getFirst("Prefer"));
     }
 }

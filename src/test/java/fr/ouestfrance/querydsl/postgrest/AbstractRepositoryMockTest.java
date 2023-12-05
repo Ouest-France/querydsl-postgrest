@@ -9,7 +9,7 @@ import org.springframework.util.MultiValueMap;
 abstract class AbstractRepositoryMockTest {
 
     @SuppressWarnings("unchecked")
-    ArgumentCaptor<MultiValueMap<String, Object>> multiMapCaptor() {
+    ArgumentCaptor<MultiValueMap<String, String>> multiMapCaptor() {
         return ArgumentCaptor.forClass(MultiValueMap.class);
     }
 }

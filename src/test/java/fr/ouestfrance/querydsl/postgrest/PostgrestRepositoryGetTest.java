@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.MultiValueMapAdapter;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -29,17 +30,17 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
 
 
     @Mock
-    private PostgrestClient postgrestClient;
+    private PostgrestClient webClient;
 
     private PostgrestRepository<Post> repository;
 
     @BeforeEach
     void beforeEach() {
-        repository = new PostRepository(postgrestClient, new ObjectMapper());
+        repository = new PostRepository(webClient);
     }
     @Test
     void shouldSearchAllPosts() {
-        when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post(), new Post())));
+        when(webClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post(), new Post())));
         Page<Post> search = repository.search(null);
         assertNotNull(search);
         assertNotNull(search.iterator());
@@ -60,15 +61,15 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
         request.setCodes(List.of("a", "b", "c"));
         request.setExcludes(List.of("z"));
         request.setValidDate(LocalDate.of(2023, 11, 10));
-        ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
-        ArgumentCaptor<MultiValueMap<String, Object>> headerArgs = multiMapCaptor();
-        when(postgrestClient.search(anyString(), queryArgs.capture(), headerArgs.capture())).thenReturn(ok(List.of(new Post(), new Post())));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, String>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture())).thenReturn(ok(List.of(new Post(), new Post())));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10, Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title").nullsFirst(), Sort.Order.asc("author").nullsLast())));
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors
-        MultiValueMap<String, Object> queries = queryArgs.getValue();
+        MultiValueMap<String, String> queries = queryArgs.getValue();
         log.info("queries {}", queries);
         assertEquals("eq.1", queries.getFirst("userId"));
         assertEquals("neq.1", queries.getFirst("id"));
@@ -79,7 +80,7 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
         assertEquals("*,authors(*)", queries.getFirst("select"));
         assertEquals(2, queries.get("status").size());
         // Assert headers captors
-        MultiValueMap<String, Object> value = headerArgs.getValue();
+        MultiValueMap<String, String> value = headerArgs.getValue();
         assertEquals("0-9", value.getFirst("Range"));
         assertEquals("items", value.getFirst("Range-Unit"));
     }
@@ -87,32 +88,32 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
     @Test
     void shouldSearchWithoutOrder() {
         PostRequest request = new PostRequest();
-        ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
-        ArgumentCaptor<MultiValueMap<String, Object>> headerArgs = multiMapCaptor();
-        when(postgrestClient.search(anyString(), queryArgs.capture(), headerArgs.capture())).thenReturn(ok(List.of(new Post(), new Post())));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, String>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture())).thenReturn(ok(List.of(new Post(), new Post())));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors
-        MultiValueMap<String, Object> queries = queryArgs.getValue();
+        MultiValueMap<String, String> queries = queryArgs.getValue();
         log.info("queries {}", queries);
         assertNull(queries.getFirst("order"));
         // Assert headers captors
-        MultiValueMap<String, Object> value = headerArgs.getValue();
+        MultiValueMap<String, String> value = headerArgs.getValue();
         assertEquals("0-9", value.getFirst("Range"));
         assertEquals("items", value.getFirst("Range-Unit"));
     }
 
     @Test
     void shouldRaiseExceptionOnMultipleOne() {
-        when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post(), new Post())));
+        when(webClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post(), new Post())));
         assertThrows(PostgrestRequestException.class, () -> repository.findOne(null));
     }
 
     @Test
     void shouldFindOne() {
-        when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post())));
+        when(webClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post())));
         Optional<Post> one = repository.findOne(null);
         assertNotNull(one);
         assertTrue(one.isPresent());
@@ -121,7 +122,7 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldFindEmptyOne() {
-        when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of()));
+        when(webClient.search(anyString(), any(), any())).thenReturn(ok(List.of()));
         Optional<Post> one = repository.findOne(null);
         assertNotNull(one);
         assertTrue(one.isEmpty());
@@ -130,14 +131,14 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldGetOne() {
-        when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post())));
+        when(webClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post())));
         Post one = repository.getOne(null);
         assertNotNull(one);
     }
 
     @Test
     void shouldRaiseExceptionOnEmptyGetOne() {
-        when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of()));
+        when(webClient.search(anyString(), any(), any())).thenReturn(ok(List.of()));
         assertThrows(PostgrestRequestException.class, () -> repository.getOne(null));
     }
 
@@ -145,13 +146,13 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
     void shouldSearchWithJoin() {
         PostRequestWithSize request = new PostRequestWithSize();
         request.setSize("25");
-        ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
-        when(postgrestClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
         Page<Post> search = repository.search(request, Pageable.unPaged());
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors
-        MultiValueMap<String, Object> queries = queryArgs.getValue();
+        MultiValueMap<String, String> queries = queryArgs.getValue();
         String queryString = QueryStringUtils.toQueryString(queries);
         log.info("queries {}", queries);
         assertEquals(1, queries.get("or").size());
@@ -164,14 +165,14 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
         PostRequestWithAuthorOrSubject request = new PostRequestWithAuthorOrSubject();
         request.setAuthor("IA");
         request.setSubject("IA");
-        ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
-        when(postgrestClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors
-        MultiValueMap<String, Object> queries = queryArgs.getValue();
+        MultiValueMap<String, String> queries = queryArgs.getValue();
         String queryString = QueryStringUtils.toQueryString(queries);
         System.out.println("queries : " + queryString);
         log.info("queries {}", queries);
@@ -187,14 +188,14 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
         request.setCode("25");
         request.setPortee("['DEPARTEMENT']");
         request.setDateValide(LocalDate.of(2023,12,4));
-        ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
-        when(postgrestClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors
-        MultiValueMap<String, Object> queries = queryArgs.getValue();
+        MultiValueMap<String, String> queries = queryArgs.getValue();
         assertEquals("(filtrePublication.dateFinValidite.gte.2023-12-04,filtrePublication.dateFinValidite.is.null)", queries.getFirst("or"));
     }
 

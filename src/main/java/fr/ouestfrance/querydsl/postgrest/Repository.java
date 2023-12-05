@@ -15,13 +15,6 @@ import java.util.Optional;
 public interface Repository<T> {
 
     /**
-     * Resource name of the repository
-     *
-     * @return resourceName of the repository
-     */
-    String resourceName();
-
-    /**
      * Search from criteria object
      *
      * @param criteria search criteria
@@ -47,14 +40,7 @@ public interface Repository<T> {
      * @return Optional result
      * @throws PostgrestRequestException when search criteria result gave more than one item
      */
-    default Optional<T> findOne(Object criteria) {
-        Page<T> search = search(criteria);
-        if (search.getTotalElements() > 1) {
-            throw new PostgrestRequestException(resourceName(),
-                    "Search with params " + criteria + " must found only one result, but found " + search.getTotalElements() + " results");
-        }
-        return search.stream().findFirst();
-    }
+    Optional<T> findOne(Object criteria);
 
     /**
      * Get one object using criteria, method should return the response
@@ -63,12 +49,7 @@ public interface Repository<T> {
      * @return Result object
      * @throws PostgrestRequestException no element found, or more than one item
      */
-    default T getOne(Object criteria) {
-        return findOne(criteria).orElseThrow(
-                () -> new PostgrestRequestException(resourceName(),
-                        "Search with params " + criteria + " must return one result, but found 0"));
-    }
-
+    T getOne(Object criteria);
 
     /**
      * Upsert a value

@@ -6,10 +6,11 @@ import fr.ouestfrance.querydsl.postgrest.PostgrestRepository;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @PostgrestConfiguration(resource = "posts")
 public class SimpleRepository extends PostgrestRepository<Post> {
-    public SimpleRepository(PostgrestClient client, ObjectMapper mapper) {
-        super(client, mapper);
+    public SimpleRepository(PostgrestClient client) {
+        super(client);
     }
 }
