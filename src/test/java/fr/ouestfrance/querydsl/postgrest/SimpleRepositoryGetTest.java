@@ -2,8 +2,10 @@ package fr.ouestfrance.querydsl.postgrest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.app.Post;
+import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import fr.ouestfrance.querydsl.postgrest.app.SimpleRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,19 +25,18 @@ import static org.mockito.Mockito.when;
 @Slf4j
 class SimpleRepositoryGetTest {
 
-    @InjectMocks
-    private PostgrestRepository<Post> repository = new SimpleRepository();
-
     @Mock
     private PostgrestClient postgrestClient;
 
-    @Mock
-    private ObjectMapper mapper;
+    private PostgrestRepository<Post> repository;
 
+    @BeforeEach
+    void beforeEach() {
+        repository = new PostRepository(postgrestClient, new ObjectMapper());
+    }
     @Test
     void shouldFindOne() {
         when(postgrestClient.search(anyString(), any(), any())).thenReturn(ResponseEntity.ok(List.of(new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
         Optional<Post> one = repository.findOne(null);
         assertNotNull(one);
         assertTrue(one.isPresent());

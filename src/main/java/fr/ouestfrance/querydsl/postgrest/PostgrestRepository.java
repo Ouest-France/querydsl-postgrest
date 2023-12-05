@@ -10,9 +10,6 @@ import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
-import jakarta.annotation.Nonnull;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -25,29 +22,23 @@ import java.util.*;
  *
  * @param <T> type of returned entity
  */
-@Slf4j
 public abstract class PostgrestRepository<T> implements Repository<T> {
 
     private final QueryDslProcessorService<Filter> processorService = new PostgrestQueryProcessorService();
     private final PostgrestConfiguration annotation;
     private final Class<T> clazz;
     private final Map<Header.Method, MultiValueMap<String, Object>> headersMap = new EnumMap<>(Header.Method.class);
+    private final ObjectMapper objectMapper;
+    private final PostgrestClient webClient;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-    @Autowired
-    private PostgrestClient webClient;
-
-    /**
-     * Constructor
-     */
-    protected PostgrestRepository() {
+    protected PostgrestRepository(PostgrestClient webClient, ObjectMapper objectMapper) {
+        this.webClient = webClient;
+        this.objectMapper = objectMapper;
         if (!getClass().isAnnotationPresent(PostgrestConfiguration.class)) {
             throw new MissingConfigurationException(getClass(),
                     "Missing annotation " + PostgrestConfiguration.class.getSimpleName());
         }
         annotation = getClass().getAnnotation(PostgrestConfiguration.class);
-
         // Create headerMap
         Arrays.stream(getClass().getAnnotationsByType(Header.class)).forEach(header -> Arrays.stream(header.methods())
                 .forEach(method ->
@@ -60,7 +51,7 @@ public abstract class PostgrestRepository<T> implements Repository<T> {
     }
 
     @Override
-    public Page<T> search(Object criteria, @Nonnull Pageable pageable) {
+    public Page<T> search(Object criteria, Pageable pageable) {
         List<Filter> queryParams = processorService.process(criteria);
         MultiValueMap<String, Object> headers = headersMap.get(Header.Method.GET);
         // Add pageable if present

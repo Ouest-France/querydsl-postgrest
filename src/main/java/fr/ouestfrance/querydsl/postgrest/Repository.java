@@ -3,7 +3,6 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
-import jakarta.annotation.Nonnull;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +38,7 @@ public interface Repository<T> {
      * @param pageable pagination data
      * @return page result
      */
-    Page<T> search(Object criteria, @Nonnull Pageable pageable);
+    Page<T> search(Object criteria, Pageable pageable);
 
     /**
      * Find one object using criteria, method can return one or empty

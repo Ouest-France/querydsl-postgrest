@@ -1,7 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest.model;
 
-import jakarta.annotation.Nonnull;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +31,6 @@ public interface Page<T> extends Iterable<T> {
      * Get data for a page
      * @return data for a page
      */
-    @Nonnull
     List<T> getData();
 
     /**
@@ -70,7 +68,6 @@ public interface Page<T> extends Iterable<T> {
     }
 
     @Override
-    @Nonnull
     default Iterator<T> iterator() {
         return getData().iterator();
     }

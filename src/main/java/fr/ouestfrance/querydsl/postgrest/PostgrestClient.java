@@ -9,12 +9,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.service.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Rest interface for querying postgrest
  */
-@HttpExchange("/{resource}")
 public interface PostgrestClient {
     /**
      * Search method
@@ -24,8 +22,8 @@ public interface PostgrestClient {
      * @param headers  header params
      * @return ResponseEntity containing the results
      */
-    @GetExchange
-    ResponseEntity<List<Object>> search(@PathVariable String resource, @RequestParam MultiValueMap<String, Object> params,
+    @GetExchange("/{resource}")
+    ResponseEntity<List<Object>> search(@PathVariable("resource") String resource, @RequestParam MultiValueMap<String, Object> params,
                                         @RequestHeader MultiValueMap<String, Object> headers);
 
     /**
@@ -36,8 +34,8 @@ public interface PostgrestClient {
      * @param headers  headers to pass
      * @return list of inserted objects
      */
-    @PostExchange
-    List<Object> post(@PathVariable String resource, @RequestBody List<Object> value, @RequestHeader MultiValueMap<String, Object> headers);
+    @PostExchange("/{resource}")
+    List<Object> post(@PathVariable("resource") String resource, @RequestBody List<Object> value, @RequestHeader MultiValueMap<String, Object> headers);
 
     /**
      * Patch data
@@ -48,8 +46,8 @@ public interface PostgrestClient {
      * @param headers  headers to pass
      * @return list of patched objects
      */
-    @PatchExchange
-    List<Object> patch(@PathVariable String resource, @RequestParam MultiValueMap<String, Object> params, @RequestBody Object value, @RequestHeader MultiValueMap<String, Object> headers);
+    @PatchExchange("/{resource}")
+    List<Object> patch(@PathVariable("resource") String resource, @RequestParam MultiValueMap<String, Object> params, @RequestBody Object value, @RequestHeader MultiValueMap<String, Object> headers);
 
     /**
      * Delete data
@@ -59,7 +57,7 @@ public interface PostgrestClient {
      * @param headers  headers to pass
      * @return list of deleted objects
      */
-    @DeleteExchange
-    List<Object> delete(@PathVariable String resource, @RequestParam MultiValueMap<String, Object> params, @RequestHeader MultiValueMap<String, Object> headers);
+    @DeleteExchange("/{resource}")
+    List<Object> delete(@PathVariable("resource") String resource, @RequestParam MultiValueMap<String, Object> params, @RequestHeader MultiValueMap<String, Object> headers);
 
 }

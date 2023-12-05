@@ -8,12 +8,10 @@ import fr.ouestfrance.querydsl.postgrest.model.Sort;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.utils.QueryStringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -25,19 +23,21 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-@Slf4j
-class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
 
-    @InjectMocks
-    private PostgrestRepository<Post> repository = new PostRepository();
+@Slf4j
+class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest {
+
 
     @Mock
     private PostgrestClient postgrestClient;
 
-    @Mock
-    private ObjectMapper mapper;
+    private PostgrestRepository<Post> repository;
 
-        @Test
+    @BeforeEach
+    void beforeEach() {
+        repository = new PostRepository(postgrestClient, new ObjectMapper());
+    }
+    @Test
     void shouldSearchAllPosts() {
         when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post(), new Post())));
         Page<Post> search = repository.search(null);
@@ -63,7 +63,6 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
         ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
         ArgumentCaptor<MultiValueMap<String, Object>> headerArgs = multiMapCaptor();
         when(postgrestClient.search(anyString(), queryArgs.capture(), headerArgs.capture())).thenReturn(ok(List.of(new Post(), new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10, Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title").nullsFirst(), Sort.Order.asc("author").nullsLast())));
         assertNotNull(search);
@@ -91,7 +90,6 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
         ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
         ArgumentCaptor<MultiValueMap<String, Object>> headerArgs = multiMapCaptor();
         when(postgrestClient.search(anyString(), queryArgs.capture(), headerArgs.capture())).thenReturn(ok(List.of(new Post(), new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
@@ -115,7 +113,6 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
     @Test
     void shouldFindOne() {
         when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
         Optional<Post> one = repository.findOne(null);
         assertNotNull(one);
         assertTrue(one.isPresent());
@@ -134,7 +131,6 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
     @Test
     void shouldGetOne() {
         when(postgrestClient.search(anyString(), any(), any())).thenReturn(ok(List.of(new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
         Post one = repository.getOne(null);
         assertNotNull(one);
     }
@@ -151,7 +147,6 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
         request.setSize("25");
         ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
         when(postgrestClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
         Page<Post> search = repository.search(request, Pageable.unPaged());
         assertNotNull(search);
         assertEquals(2, search.size());
@@ -171,7 +166,6 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
         request.setSubject("IA");
         ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
         when(postgrestClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
@@ -179,7 +173,7 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
         // Assert query captors
         MultiValueMap<String, Object> queries = queryArgs.getValue();
         String queryString = QueryStringUtils.toQueryString(queries);
-        System.out.println("queries : "+ queryString);
+        System.out.println("queries : " + queryString);
         log.info("queries {}", queries);
         assertEquals("(subject.eq.IA,author.name.eq.IA)", queries.getFirst("or"));
         String[] selects = Objects.requireNonNull(queries.getFirst("select")).toString().split(",");
@@ -192,10 +186,9 @@ class PostgrestRepositoryGetTest extends AbstractRepositoryMockTest{
         PublicationRequest request = new PublicationRequest();
         request.setCode("25");
         request.setPortee("['DEPARTEMENT']");
-        request.setDateValide(LocalDate.now());
+        request.setDateValide(LocalDate.of(2023,12,4));
         ArgumentCaptor<MultiValueMap<String, Object>> queryArgs = multiMapCaptor();
         when(postgrestClient.search(anyString(), queryArgs.capture(), any())).thenReturn(ok(List.of(new Post(), new Post())));
-        when(mapper.convertValue(any(), eq(Post.class))).thenReturn(new Post());
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);

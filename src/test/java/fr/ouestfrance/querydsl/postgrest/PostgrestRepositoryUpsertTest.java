@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,18 +25,14 @@ import static org.mockito.Mockito.when;
 @Slf4j
 class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
 
-    @InjectMocks
-    private PostgrestRepository<Post> repository = new PostRepository();
-
     @Mock
     private PostgrestClient postgrestClient;
+    private PostgrestRepository<Post> repository;
 
-    @Mock
-    private ObjectMapper mapper;
-
-    private final ObjectMapper realMapper = new ObjectMapper();
-
-
+    @BeforeEach
+    void beforeEach() {
+        repository = new PostRepository(postgrestClient, new ObjectMapper());
+    }
     @Test
     void shouldUpsert() {
         @SuppressWarnings("unchecked")
@@ -54,7 +51,6 @@ class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
             post.setBody(save.getBody());
             return List.of(post);
         });
-        when(mapper.convertValue(any(), eq(Post.class))).thenAnswer(x -> realMapper.convertValue(x.getArguments()[0], Post.class));
         Post saved = repository.upsert(save);
         assertNotNull(saved);
 

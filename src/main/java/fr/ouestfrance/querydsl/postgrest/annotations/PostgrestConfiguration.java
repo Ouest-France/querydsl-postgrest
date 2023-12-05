@@ -1,7 +1,5 @@
 package fr.ouestfrance.querydsl.postgrest.annotations;
 
-import org.springframework.stereotype.Repository;
-
 import java.lang.annotation.*;
 
 import static fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration.CountType.EXACT;
@@ -13,7 +11,6 @@ import static fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfigurati
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Repository
 public @interface PostgrestConfiguration {
     /**
      * Resource name
@@ -33,11 +30,17 @@ public @interface PostgrestConfiguration {
      * Count Type
      */
     enum CountType {
-        /**Get the total size of the table*/
+        /**
+         * Get the total size of the table
+         */
         EXACT,
-        /**Get a fairly accurate and fast count*/
+        /**
+         * Get a fairly accurate and fast count
+         */
         PLANNED,
-        /**Get an estimated count of the number of elements*/
+        /**
+         * Get an estimated count of the number of elements
+         */
         ESTIMATED
     }
 }
