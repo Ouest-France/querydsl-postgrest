@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @Slf4j
-class PostgrestRepositoryPatchTest extends AbstractRepositoryMockTest{
+class PostgrestRepositoryPatchMockTest extends AbstractRepositoryMockTest{
 
     @Mock
     private PostgrestWebClient webClient;
@@ -35,7 +35,7 @@ class PostgrestRepositoryPatchTest extends AbstractRepositoryMockTest{
         ArgumentCaptor<MultiValueMap<String, String>> headerCaptor = multiMapCaptor();
         Post post = new Post();
         post.setUserId(26);
-        when(webClient.patch(anyString(), queriesCaptor.capture(), eq(post), headerCaptor.capture())).thenReturn(List.of(post));
+        when(webClient.patch(anyString(), queriesCaptor.capture(), eq(post), headerCaptor.capture(), eq(Post.class))).thenReturn(List.of(post));
         List<Post> patched = repository.patch(new PostDeleteRequest(List.of("1", "2")), post);
         assertNotNull(patched);
         assertEquals(1, patched.size());

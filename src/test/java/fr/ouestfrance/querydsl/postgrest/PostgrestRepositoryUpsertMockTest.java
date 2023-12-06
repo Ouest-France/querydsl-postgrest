@@ -14,12 +14,12 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @Slf4j
-class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
+class PostgrestRepositoryUpsertMockTest extends AbstractRepositoryMockTest {
 
     @Mock
     private PostgrestWebClient webClient;
@@ -30,6 +30,7 @@ class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
     void beforeEach() {
         repository = new PostRepository(webClient);
     }
+
     @Test
     void shouldUpsert() {
         @SuppressWarnings("unchecked")
@@ -41,7 +42,7 @@ class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
         save.setTitle("title");
         save.setBody("test");
 
-        when(webClient.post(anyString(), postCaptor.capture(), headerCaptor.capture())).thenAnswer(x -> {
+        when(webClient.post(anyString(), postCaptor.capture(), headerCaptor.capture(), eq(Post.class))).thenAnswer(x -> {
             Post post = new Post();
             post.setId(generateId);
             post.setTitle(save.getTitle());

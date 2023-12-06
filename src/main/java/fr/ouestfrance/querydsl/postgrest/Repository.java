@@ -58,7 +58,8 @@ public interface Repository<T> {
      * @return upsert value
      */
     default T upsert(Object value) {
-        return upsert(List.of(value)).stream().findFirst().orElse(null);
+        List<T> upsert = upsert(List.of(value));
+        return upsert.stream().findFirst().orElse(null);
     }
 
     /**

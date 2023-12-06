@@ -15,10 +15,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @Slf4j
-class PostgrestRepositoryDeleteTest extends AbstractRepositoryMockTest {
+class PostgrestRepositoryDeleteMockTest extends AbstractRepositoryMockTest {
 
 
     @Mock
@@ -36,7 +37,7 @@ class PostgrestRepositoryDeleteTest extends AbstractRepositoryMockTest {
         ArgumentCaptor<MultiValueMap<String, String>> queriesCaptor = multiMapCaptor();
         ArgumentCaptor<MultiValueMap<String, String>> headerCaptor = multiMapCaptor();
         Post deletedPost = new Post();
-        when(postgrestClient.delete(anyString(), queriesCaptor.capture(), headerCaptor.capture())).thenReturn(List.of(deletedPost));
+        when(postgrestClient.delete(anyString(), queriesCaptor.capture(), headerCaptor.capture(), eq(Post.class))).thenReturn(List.of(deletedPost));
         List<Post> delete = repository.delete(new PostDeleteRequest(List.of("1", "2")));
         assertNotNull(delete);
 

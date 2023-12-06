@@ -20,7 +20,7 @@ public interface PostgrestClient {
      */
 
     <T> Page<T> search(String resource, MultiValueMap<String, String> params,
-                       MultiValueMap<String, String> headers);
+                       MultiValueMap<String, String> headers, Class<T> clazz);
 
     /**
      * Save body
@@ -31,7 +31,7 @@ public interface PostgrestClient {
      * @param <T>      return type
      * @return list of inserted objects
      */
-    <T> List<T> post(String resource, List<Object> value, MultiValueMap<String, String> headers);
+    <T> List<T> post(String resource, List<Object> value, MultiValueMap<String, String> headers, Class<T> clazz);
 
     /**
      * Patch data
@@ -43,7 +43,7 @@ public interface PostgrestClient {
      * @param <T>      return type
      * @return list of patched objects
      */
-    <T> List<T> patch(String resource, MultiValueMap<String, String> params, Object value, MultiValueMap<String, String> headers);
+    <T> List<T> patch(String resource, MultiValueMap<String, String> params, Object value, MultiValueMap<String, String> headers, Class<T> clazz);
 
     /**
      * Delete data
@@ -54,6 +54,6 @@ public interface PostgrestClient {
      * @param <T>      return type
      * @return list of deleted objects
      */
-    <T> List<T> delete(String resource, MultiValueMap<String, String> params, MultiValueMap<String, String> headers);
+    <T> List<T> delete(String resource, MultiValueMap<String, String> params, MultiValueMap<String, String> headers, Class<T> clazz);
 
 }

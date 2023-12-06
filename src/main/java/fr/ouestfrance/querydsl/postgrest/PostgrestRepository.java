@@ -13,6 +13,7 @@ import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -29,6 +30,7 @@ public class PostgrestRepository<T> implements Repository<T> {
     private final PostgrestConfiguration annotation;
     private final Map<Header.Method, MultiValueMap<String, String>> headersMap = new EnumMap<>(Header.Method.class);
     private final PostgrestClient client;
+    private final Class<T> clazz;
 
     /**
      * Postgrest Repository constructor
@@ -49,6 +51,8 @@ public class PostgrestRepository<T> implements Repository<T> {
                                 .addAll(header.key(), Arrays.asList(header.value()))
                 )
         );
+        //noinspection unchecked
+        clazz = (Class<T>) GenericTypeResolver.resolveTypeArgument(getClass(), PostgrestRepository.class);
     }
 
     @Override
@@ -67,7 +71,7 @@ public class PostgrestRepository<T> implements Repository<T> {
         }
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        Page<T> response = client.search(annotation.resource(), toMap(queryParams), headers);
+        Page<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
         if (response instanceof PageImpl<T> page) {
             page.setPageable(pageable);
         }
@@ -77,7 +81,7 @@ public class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public List<T> upsert(List<Object> values) {
-        return client.post(annotation.resource(), values, headerMap(Header.Method.UPSERT));
+        return client.post(annotation.resource(), values, headerMap(Header.Method.UPSERT), clazz);
     }
 
 
@@ -86,7 +90,7 @@ public class PostgrestRepository<T> implements Repository<T> {
         List<Filter> queryParams = processorService.process(criteria);
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        return client.patch(annotation.resource(), toMap(queryParams), body, headerMap(Header.Method.UPSERT));
+        return client.patch(annotation.resource(), toMap(queryParams), body, headerMap(Header.Method.UPSERT), clazz);
     }
 
 
@@ -95,7 +99,7 @@ public class PostgrestRepository<T> implements Repository<T> {
         List<Filter> queryParams = processorService.process(criteria);
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        return client.delete(annotation.resource(), toMap(queryParams), headerMap(Header.Method.DELETE));
+        return client.delete(annotation.resource(), toMap(queryParams), headerMap(Header.Method.DELETE), clazz);
     }
 
     /**

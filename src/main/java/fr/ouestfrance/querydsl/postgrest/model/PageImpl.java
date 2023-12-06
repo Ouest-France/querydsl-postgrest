@@ -39,7 +39,7 @@ public class PageImpl<T> implements Page<T> {
     public void withRange(Range range) {
         totalElements = range.getTotalElements();
         if (totalElements > 0) {
-            totalPages = (int) (totalElements / (range.getLimit() - range.getOffset())) + 1;
+            totalPages = (int) (totalElements / (range.getLimit() - range.getOffset()));
         }
     }
 }
