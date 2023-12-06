@@ -8,10 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,7 +43,7 @@ public class PostgrestWebClient implements PostgrestClient {
                     uriBuilder.queryParams(params);
                     return uriBuilder.build();
                 }).headers(httpHeaders ->
-                        httpHeaders.addAll(headers)
+                        safeAdd(headers, httpHeaders)
                 )
                 .retrieve()
                 .toEntity(listRef(clazz))
@@ -60,12 +62,16 @@ public class PostgrestWebClient implements PostgrestClient {
                 }).orElse(Page.empty());
     }
 
+    private static void safeAdd(MultiValueMap<String, String> headers, HttpHeaders httpHeaders) {
+        Optional.ofNullable(headers).ifPresent(httpHeaders::addAll);
+    }
+
     @Override
     public <T> List<T> post(String resource, List<Object> value, MultiValueMap<String, String> headers, Class<T> clazz) {
         return webClient.post().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     return uriBuilder.build();
-                }).headers(httpHeaders -> httpHeaders.addAll(headers))
+                }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .bodyValue(value)
                 .retrieve()
                 .bodyToMono(listRef(clazz))
@@ -81,7 +87,7 @@ public class PostgrestWebClient implements PostgrestClient {
                     return uriBuilder.build();
                 })
                 .bodyValue(value)
-                .headers(httpHeaders -> httpHeaders.addAll(headers))
+                .headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
                 .bodyToMono(listRef(clazz)).block();
     }
@@ -92,7 +98,7 @@ public class PostgrestWebClient implements PostgrestClient {
                     uriBuilder.path(resource);
                     uriBuilder.queryParams(params);
                     return uriBuilder.build();
-                }).headers(httpHeaders -> httpHeaders.addAll(headers))
+                }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
                 .bodyToMono(listRef(clazz)).block();
     }
