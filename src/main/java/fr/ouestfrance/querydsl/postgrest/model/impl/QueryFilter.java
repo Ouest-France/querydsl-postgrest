@@ -6,6 +6,7 @@ import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * Simple filter allow to describe a single param in the query string

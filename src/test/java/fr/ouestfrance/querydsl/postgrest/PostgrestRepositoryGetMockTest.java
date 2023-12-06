@@ -153,9 +153,10 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         MultiValueMap<String, String> queries = queryArgs.getValue();
         String queryString = QueryStringUtils.toQueryString(queries);
         log.info("queries {}", queries);
+        System.out.println(queries);
         assertEquals(1, queries.get("or").size());
         // Means that you have to make (format.minSize.gte.25 AND format.maxSize.lte.25) OR size.eq.25
-        assertEquals("(and(filterFormats.minSize.gte.25,or(filterFormats.maxSize.lte.25,filterFormats.maxSize.is.null)),size.eq.25)", queries.getFirst("or"));
+        assertEquals("(filterFormats.and(minSize.gte.25,or(maxSize.lte.25,maxSize.is.null)),size.eq.25)", queries.getFirst("or"));
     }
 
     @Test
@@ -194,7 +195,8 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertEquals(2, search.size());
         // Assert query captors
         MultiValueMap<String, String> queries = queryArgs.getValue();
-        assertEquals("(filtrePublication.dateFinValidite.gte.2023-12-04,filtrePublication.dateFinValidite.is.null)", queries.getFirst("or"));
+        System.out.println(queries);
+        assertEquals("(dateFinValidite.gte.2023-12-04,dateFinValidite.is.null)", queries.getFirst("filtrePublication.or"));
     }
 
 }
