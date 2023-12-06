@@ -1,7 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,8 +35,8 @@ public class PostConfiguration {
     }
 
     @Bean
-    public PostgrestClient postgrestRepository(HttpServiceProxyFactory factory){
-        return factory.createClient(PostgrestClient.class);
+    public PostgrestWebClient postgrestRepository(HttpServiceProxyFactory factory){
+        return factory.createClient(PostgrestWebClient.class);
     }
 
     @Bean

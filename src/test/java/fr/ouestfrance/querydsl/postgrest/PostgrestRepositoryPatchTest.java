@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
@@ -22,7 +21,7 @@ import static org.mockito.Mockito.when;
 class PostgrestRepositoryPatchTest extends AbstractRepositoryMockTest{
 
     @Mock
-    private PostgrestClient webClient;
+    private PostgrestWebClient webClient;
 
     private PostgrestRepository<Post> repository;
 

@@ -2,6 +2,7 @@ package fr.ouestfrance.querydsl.postgrest.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -20,7 +21,8 @@ public class PageImpl<T> implements Page<T> {
     /**
      * Request information
      */
-    private final Pageable pageable;
+    @Setter
+    private Pageable pageable;
     /**
      * Total elements
      */

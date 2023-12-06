@@ -23,7 +23,17 @@ public interface Page<T> extends Iterable<T> {
      */
     @SafeVarargs
     static <T> Page<T> of(T... items) {
-        return new PageImpl<>(Arrays.asList(items), Pageable.unPaged(), 0, items.length);
+        return new PageImpl<>(Arrays.asList(items), Pageable.unPaged(), items.length, 1);
+    }
+
+    /**
+     * Create an empty page
+     *
+     * @param <T> type of items
+     * @return empty page
+     */
+    static <T> Page<T> empty() {
+        return new PageImpl<>(List.of(), Pageable.unPaged(), 0, 0);
     }
 
     /**

@@ -1,6 +1,5 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +22,7 @@ import static org.mockito.Mockito.when;
 class PostgrestRepositoryUpsertTest extends AbstractRepositoryMockTest {
 
     @Mock
-    private PostgrestClient webClient;
+    private PostgrestWebClient webClient;
 
     private PostgrestRepository<Post> repository;
 

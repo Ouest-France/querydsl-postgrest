@@ -3,14 +3,16 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.model.*;
+import fr.ouestfrance.querydsl.postgrest.model.Filter;
+import fr.ouestfrance.querydsl.postgrest.model.Page;
+import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
+import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -65,17 +67,12 @@ public class PostgrestRepository<T> implements Repository<T> {
         }
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        ResponseEntity<List<T>> response = client.search(annotation.resource(), toMap(queryParams), headers);
+        Page<T> response = client.search(annotation.resource(), toMap(queryParams), headers);
+        if (response instanceof PageImpl<T> page) {
+            page.setPageable(pageable);
+        }
         // Retrieve result headers
-        return Optional.ofNullable(response.getBody()).map(x -> {
-            Page<T> page = new PageImpl<>(x, pageable, x.size(), 1);
-            List<String> contentRangeHeaders = response.getHeaders().get("Content-Range");
-            if (contentRangeHeaders != null && !contentRangeHeaders.isEmpty()) {
-                Range range = Range.of(contentRangeHeaders.stream().findFirst().toString());
-                ((PageImpl<T>) page).withRange(range);
-            }
-            return page;
-        }).orElse(Page.of());
+        return response;
     }
 
     @Override

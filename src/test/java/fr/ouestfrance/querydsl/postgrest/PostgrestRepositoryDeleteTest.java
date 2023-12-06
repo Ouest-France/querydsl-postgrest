@@ -1,6 +1,5 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostDeleteRequest;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 

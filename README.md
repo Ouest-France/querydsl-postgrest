@@ -52,7 +52,7 @@ cookies, ...) you need to deploy.
 
 ```java
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -61,13 +61,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class PostgrestConfiguration {
 
     @Bean
-    public PostgrestClient postgrestRepository() {
+    public PostgrestWebClient postgrestRepository() {
         String serviceUrl = "http://localhost:9000";
         WebClient webclient = WebClientAdapter.forClient(WebClient.builder()
                 .baseUrl(serviceUrl).build());
 
         return HttpServiceProxyFactory.builder()
-                .clientAdapter(webclient).build().createClient(PostgrestClient.class);
+                .clientAdapter(webclient).build().createClient(PostgrestWebClient.class);
     }
 
     @Bean
