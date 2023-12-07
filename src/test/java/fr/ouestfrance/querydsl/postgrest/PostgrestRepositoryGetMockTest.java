@@ -55,7 +55,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         PostRequest request = new PostRequest();
         request.setUserId(1);
         request.setId(1);
-        request.setTitle("Test");
+        request.setTitle("Test*");
         request.setCodes(List.of("a", "b", "c"));
         request.setExcludes(List.of("z"));
         request.setValidDate(LocalDate.of(2023, 11, 10));
@@ -73,7 +73,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertEquals("neq.1", queries.getFirst("id"));
         assertEquals("lte.2023-11-10", queries.getFirst("startDate"));
         assertEquals("(endDate.gte.2023-11-10,endDate.is.null)", queries.getFirst("or"));
-        assertEquals("like.{Test}", queries.getFirst("title"));
+        assertEquals("like.Test*", queries.getFirst("title"));
         assertEquals("id,title.desc.nullsfirst,author.nullslast", queries.getFirst("order"));
         assertEquals("*,authors(*)", queries.getFirst("select"));
         assertEquals(2, queries.get("status").size());

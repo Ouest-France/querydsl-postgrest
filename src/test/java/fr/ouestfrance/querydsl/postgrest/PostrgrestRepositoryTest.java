@@ -1,9 +1,9 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequest;
+import fr.ouestfrance.querydsl.postgrest.criterias.Criteria;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import lombok.SneakyThrows;
@@ -49,7 +49,39 @@ class PostrgrestRepositoryTest {
         assertEquals(50, search.getTotalPages());
         assertNotNull(search);
         assertFalse(search.getData().isEmpty());
-        search.getData().stream().map(Object::getClass).forEach(x-> assertEquals(Post.class, x));
+        search.getData().stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
+    void shouldFindById() {
+        client.when(HttpRequest.request().withPath("/posts")
+                        .withQueryStringParameter("id", "eq.1")
+                        .withQueryStringParameter("select", "*,authors(*)"))
+                .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
+        Page<Post> search = repository.search(Criteria.byId("1"), Pageable.ofSize(6));
+        System.out.println(search.getTotalElements());
+        System.out.println(search.getTotalPages());
+        assertEquals(300, search.getTotalElements());
+        assertEquals(50, search.getTotalPages());
+        assertNotNull(search);
+        assertFalse(search.getData().isEmpty());
+        search.getData().stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
+    void shouldSearchGetByIds() {
+        client.when(HttpRequest.request().withPath("/posts")
+                        .withQueryStringParameter("id", "in.(1,2,3)")
+                        .withQueryStringParameter("select", "*,authors(*)"))
+                .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
+        Page<Post> search = repository.search(Criteria.byIds("1", "2", "3"), Pageable.ofSize(6));
+        System.out.println(search.getTotalElements());
+        System.out.println(search.getTotalPages());
+        assertEquals(300, search.getTotalElements());
+        assertEquals(50, search.getTotalPages());
+        assertNotNull(search);
+        assertFalse(search.getData().isEmpty());
+        search.getData().stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
     }
 
     @Test
@@ -58,7 +90,7 @@ class PostrgrestRepositoryTest {
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
         assertNotNull(result);
-        result.stream().map(Object::getClass).forEach(x-> assertEquals(Post.class, x));
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
 
     }
 
@@ -71,7 +103,7 @@ class PostrgrestRepositoryTest {
         criteria.setUserId(25);
         List<Post> result = repository.patch(criteria, new Post());
         assertNotNull(result);
-        result.stream().map(Object::getClass).forEach(x-> assertEquals(Post.class, x));
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
     }
 
     @Test
@@ -82,7 +114,7 @@ class PostrgrestRepositoryTest {
         criteria.setUserId(25);
         List<Post> result = repository.delete(criteria);
         assertNotNull(result);
-        result.stream().map(Object::getClass).forEach(x-> assertEquals(Post.class, x));
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
     }
 
     private HttpResponse jsonFileResponse(String resourceFileName) {

@@ -19,6 +19,5 @@ public class PostRequestWithSize {
             @FilterField(key = "filterFormats.maxSize", operation = FilterOperation.LTE, orNull = true)
     })
     private String size;
-
 }
 

@@ -42,8 +42,10 @@ implementation 'fr.ouestfrance.querydsl:querydsl-postgrest:${querydsl-postgrest.
 
 ### Configure Postgrest
 
-QueryDsl postgrest provides class to simplify querying postgrest api using HttpExchange and require HttpClientAdapter.
-You could use any HttpClient (RestTemplate, OkHttpClient, WebClient) by using the good adapter.
+QueryDsl postgrest provides class to simplify querying postgrest api using PostgrestClient,
+It actually provides by default WebClient adapter `PostgrestWebClient` adapter.
+
+It's really easy to create your own HttpClientAdapter (RestTemplate, OkHttpClient, HttpConnexion, ...) by implementing `PostgrestClient` interface.
 
 You can also specify authenticators, interceptors (retry, transform) and every configuration (timeout, default headers,
 cookies, ...) you need to deploy.
@@ -52,6 +54,7 @@ cookies, ...) you need to deploy.
 
 ```java
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
 import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -61,28 +64,18 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class PostgrestConfiguration {
 
     @Bean
-    public PostgrestWebClient postgrestRepository() {
+    public PostgrestClient podstgrestClient() {
         String serviceUrl = "http://localhost:9000";
-        WebClient webclient = WebClientAdapter.forClient(WebClient.builder()
-                .baseUrl(serviceUrl).build());
+        WebClient webclient = WebClient.builder()
+                .baseUrl(serviceUrl)
+                // Here you can add any filters or default configuration you want
+                .build();
 
-        return HttpServiceProxyFactory.builder()
-                .clientAdapter(webclient).build().createClient(PostgrestWebClient.class);
-    }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        return PostgrestWebClient.of(webclient);
     }
 }
 ```
 
-Mapping to object is based on jackson ObjectMapper that allow you to configure :
-
-- Specific type converters
-- Naming strategy
-- Null strategy
-- ...
 
 ### Create your first repository
 
@@ -100,7 +93,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public static class UserSearch {
+public class UserSearch {
     @FilterField
     String id;
     @FilterField(operation = FilterOperation.LIKE)
@@ -108,24 +101,49 @@ public static class UserSearch {
 }
 ```
 
+*@Since 1.1.0 - Record Support*
+```java
+public record UserSearch(
+        @FilterField String id,
+        @FilterField(operation = FilterOperation.LIKE) String name
+){}
+```
+
+
 #### Create your repository
 
 To access data, you have to create Repository for your type and put `@PostgrestConfiguration` to specify extra data
 
-| Property      | Required | Format   | Description                                                 | Example                                                               |
-|---------------|----------|----------|-------------------------------------------------------------|-----------------------------------------------------------------------|
-| resource      | O        | String   | Resource name  in the postgrest api                         | "users"                                                               |
-| embedded      | X        | String[] | Sub resources embedded in the main resource                 | ["phone", "address"]                                                  |
-| deleteHeaders | X        | String[] | Prefers values to pass to the delete methods                | @Header(key="Prefer", value={"tx=rollback", "return=representation"}) |
-| upsertHeaders | X        | String[] | Prefers values to pass to the upsert methods                | @Header(key="Prefer", value="resolution=merge-duplicates")            |
-| patchHeaders  | X        | String[] | Prefers values to pass to the patch methods                 | @Header(key="Prefer", value="return=representation")                  |
-| countStrategy | O        | String   | Count strategy (exact, planned, estimated) default is exact | CountType.EXACT                                                       |
+| Property      | Required | Format | Description                                                 | Example         |
+|---------------|----------|--------|-------------------------------------------------------------|-----------------|
+| resource      | O        | String | Resource name in the postgrest api                         | "users"         |
+| countStrategy | X        | String | Count strategy (exact, planned, estimated) default is exact | CountType.EXACT |
 
 ```java
+import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+
+@Repository
 @PostgrestConfiguration(resource = "users")
 public class UserRepository extends PostgrestRepository<User> {
+
+    public UserRepository(PostgrestClient client) {
+        super(client);
+    }
+
 }
 ```
+
+##### PostgrestRepository functions
+
+| Method  | Return        | Parameters                                                  | Description                                                                                                                |
+|---------|---------------|-------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| search  | `Page<T>`     | criteria : `Object`<br/>pageRequest : `Pageable` (optional) | Search request based on criteria and pagination                                                                            |
+| findOne | `Optional<T>` | criteria : `Object`                                         | find one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria return more than one item              |
+| getOne  | `T`           | criteria : `Object`                                         | get one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no entity                      |
+| upsert  | `T`           | value : `Object`                                            | post data, you may define the strategy (Insert / Update) by adding header annotation `Prefer: resolution=merge-duplicates` |
+| upsert  | `List<T>`     | value : `List<Object>`                                      | post data, you may define the strategy (Insert / Update) by adding header annotation `Prefer: resolution=merge-duplicates` |
+| update  | `List<T>`     | criteria : `Object`<br/>value: `Object`                     | Update entities found by criterias                                                                                         |
+| delete  | `List<T>`     | criteria : `Object`                                         | Delete entities found by the criteria                                                                                      |
 
 ### Using the repository
 
@@ -152,13 +170,11 @@ public class UserService {
      * Return a specific
      * @param id id of the user
      * @return user found
-     * @throws NotFoundException if there's no users with this id
      */
-    public User getById(String id) throws NotFoundException {
-        UserSearch search = new UserSearch();
-        search.setId(id);
-        return userRepository.findOne(search).
-                orElseThrow(new NotFoundException(User.class, id));
+    public User getById(String id) {
+        UserSearch criteria = new UserSearch();
+        criteria.setId(id);
+        return userRepository.getOne(criteria);
     }
 
     /**
@@ -173,6 +189,104 @@ public class UserService {
     }
 }
 ```
+
+### Advanced features
+
+
+#### Vertical filtering
+
+When certain columns are wide (such as those holding binary data), it is more efficient for the server to withhold them
+in a response. The client can specify which columns are required using the select parameter.
+This can be defined by annotation `@Select`
+
+Select annotation can be added on the Repository but also to the criteria object that allow you to add specific selection for filtering
+
+| Property | Required | Format | Description              | Example     |
+|----------|----------|--------|--------------------------|-------------|
+| value    | O        | String | select value tu add      | "firstname" |
+| alias    | X        | String | renaming column or alias | "fullName"  |
+
+You can add extra selection by adding `@Select` annotation.
+In this example there is an inner join on `Posts.author` and selecting only `firstName` and `lastName`
+
+```java
+@PostgrestConfiguration(resource = "posts")
+@Select(alias="author", value="author!inner(firstName, lastName)")
+public class PostRepository extends PostgrestRepository<Post> {
+    
+}
+```
+Will return json like this :
+```json
+[
+  {
+    "id": 1,
+    "title": "Post 1",
+    "author": {
+      "firstName": "John",
+      "lastName": "Doe"
+    }
+  },
+  {
+    "id": 2,
+    "title": "Post 2",
+    "author": {
+      "firstName": "Jane",
+      "lastName": "Doe"
+    }
+  }
+]
+```
+
+#### Headers
+
+This library allow strategy based on `Prefer` header see official [PostgREST Documentation](https://postgrest.org/en/stable/references/api/preferences.html) by adding `@Header` annotation over your Repositoru
+
+```java
+// Return representation object for all functions
+@Header(key = Prefer.HEADER, value = Prefer.Return.REPRESENTATION)
+// Make Upsert using POST with Merge_Duplicated value
+@Header(key = Prefer.HEADER, value = Prefer.Resolution.MERGE_DUPLICATES, methods = UPSERT)
+public class PostRepository extends PostgrestRepository<Post> {
+}
+```
+
+#### Logical condition
+
+Any chance you want to have a more complex condition, it's possible to make mixin or / and condition by using `groupName`
+
+```java
+
+@Getter
+@Setter
+@Select(alias = "filterFormats", value = "formats!inner(minSize, maxSize)")
+public class PostRequestWithSize {
+
+    // size = $size OR (filterFormats.minSize < size AND filterFormats.maxSize > size)
+    @FilterField(key = "size", groupName = "sizeOrGroup")
+    @FilterFields(groupName = "sizeOrGroup", value = {
+            @FilterField(key = "filterFormats.minSize", operation = FilterOperation.GTE),
+            @FilterField(key = "filterFormats.maxSize", operation = FilterOperation.LTE, orNull = true)
+    })
+    private String size;
+}
+```
+or on multiple fields 
+
+```java
+public class PostRequestWithAuthorOrSubject {
+
+    // subject = $subject OR name= $name
+    @FilterField(groupName = "subjectOrAuthorName")
+    private String subject;
+
+    @FilterField(groupName = "subjectOrAuthorName")
+    private String name;
+
+}
+
+```
+
 
 ## Need Help ?
 
@@ -190,10 +304,17 @@ The QueryDSL is licensed under [MIT License](https://opensource.org/license/mit/
 
 
 [maven-build-image]: https://github.com/Ouest-France/querydsl-postgrest/actions/workflows/build.yml/badge.svg
+
 [maven-build-url]: https://github.com/Ouest-France/querydsl-postgrest/actions/workflows/build.yml
+
 [coverage-image]: https://codecov.io/gh/ouest-france/querydsl-postgrest/graph/badge.svg
+
 [coverage-url]: https://codecov.io/gh/ouest-france/querydsl-postgrest
+
 [maven-central-image]: https://maven-badges.herokuapp.com/maven-central/fr.ouestfrance.querydsl/querydsl-postgrest/badge.svg
+
 [maven-central-url]: https://mvnrepository.com/artifact/fr.ouestfrance.querydsl/querydsl-postgrest
+
 [sonar-image]: https://sonarcloud.io/api/project_badges/measure?project=Ouest-France_querydsl-postgrest&metric=alert_status
+
 [sonar-url]: https://sonarcloud.io/summary/new_code?id=Ouest-France_querydsl-postgrest

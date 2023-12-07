@@ -57,7 +57,7 @@ class PostgrestRepositoryUpsertMockTest extends AbstractRepositoryMockTest {
         assertEquals(save.getBody(), saved.getBody());
         assertEquals(save.getTitle(), saved.getTitle());
         MultiValueMap<String, String> headers = headerCaptor.getValue();
-        assertEquals(3, headers.get("Prefer").size());
+        assertEquals(2, headers.get("Prefer").size());
         assertEquals("return=representation", headers.getFirst("Prefer"));
     }
 }

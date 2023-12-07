@@ -12,7 +12,7 @@ public class LikeMapper extends AbstractMapper {
 
     @Override
     public Filter getFilter(String field, Object value) {
-        return QueryFilter.of(field, Operators.LIKE, "{" + value + "}");
+        return QueryFilter.of(field, Operators.LIKE, value);
     }
 
 
