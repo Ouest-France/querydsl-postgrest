@@ -11,13 +11,12 @@
 
 </div>
 
-QueryDSL-PostgRest is a [PostgRest](https://github.com/postgrest/postgrest) implementation of queryDSL library
+**QueryDSL-PostgRest** is a [PostgRest](https://github.com/postgrest/postgrest) implementation of [QueryDSL](https://github.com/Ouest-France/querydsl) library 
+and provides class and annotation to improve your developer experience using PostgRest.
+
+**PostgREST** is an open source project that provides a fully RESTful API from any existing PostgreSQL database
 
 ## Getting Started
-
-QueryDSL is a **Domain Specific Language** based on annotation processing to transform java classes to dedicated query
-for a specific datasource.
-You can write your own connector implementation by adding this library to your code
 
 ### Maven integration
 
