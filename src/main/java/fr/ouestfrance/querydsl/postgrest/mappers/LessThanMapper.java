@@ -18,7 +18,7 @@ public class LessThanMapper extends AbstractMapper {
 
 
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.LT;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.LT.class;
     }
 }

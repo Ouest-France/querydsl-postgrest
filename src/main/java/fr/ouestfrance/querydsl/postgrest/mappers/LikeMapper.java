@@ -17,7 +17,7 @@ public class LikeMapper extends AbstractMapper {
 
 
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.LIKE;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.LIKE.class;
     }
 }

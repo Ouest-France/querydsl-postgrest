@@ -1,8 +1,8 @@
 package fr.ouestfrance.querydsl.postgrest.mappers;
 
+import fr.ouestfrance.querydsl.FilterOperation;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.QueryFilter;
-import fr.ouestfrance.querydsl.FilterOperation;
 
 
 /**
@@ -15,9 +15,8 @@ public class GreaterThanEqualsMapper extends AbstractMapper {
         return QueryFilter.of(field, Operators.GREATER_THAN_EQUALS, value);
     }
 
-
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.GTE;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.GTE.class;
     }
 }

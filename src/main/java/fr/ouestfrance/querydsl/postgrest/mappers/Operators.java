@@ -37,6 +37,10 @@ public final class Operators {
      */
     public static final String LIKE = "like";
     /**
+     * Case-insensitive Like operation
+     */
+    public static final String ILIKE = "ilike";
+    /**
      * Not equals operation
      */
     public static final String NOT_EQUALS = "neq";
@@ -52,4 +56,12 @@ public final class Operators {
      * is operation
      */
     public static final String IS = "is";
+    /**
+     * Contains operation for JSON/Range datatype
+     */
+    public static final String CONTAINS = "cs";
+    /**
+     * Contained operation for JSON/Range datatype
+     */
+    public static final String CONTAINED = "cd";
 }

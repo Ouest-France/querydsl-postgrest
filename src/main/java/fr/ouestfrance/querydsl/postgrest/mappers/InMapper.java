@@ -1,12 +1,12 @@
 package fr.ouestfrance.querydsl.postgrest.mappers;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 import fr.ouestfrance.querydsl.FilterOperation;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.QueryFilter;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 
 /**
@@ -24,7 +24,7 @@ public class InMapper extends AbstractMapper {
 
 
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.IN;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.IN.class;
     }
 }
