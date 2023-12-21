@@ -14,8 +14,9 @@ public class EqualsMapper extends AbstractMapper {
     public Filter getFilter(String field, Object value) {
         return QueryFilter.of(field, Operators.EQUALS_TO, value);
     }
+
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.EQ;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.EQ.class;
     }
 }

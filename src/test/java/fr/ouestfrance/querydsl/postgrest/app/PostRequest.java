@@ -1,14 +1,14 @@
 package fr.ouestfrance.querydsl.postgrest.app;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import fr.ouestfrance.querydsl.FilterField;
 import fr.ouestfrance.querydsl.FilterOperation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Getter
 @Setter
@@ -18,18 +18,18 @@ public class PostRequest {
 
     @FilterField
     private Integer userId;
-    @FilterField(operation = FilterOperation.NEQ)
+    @FilterField(operation = FilterOperation.NEQ.class)
     private Integer id;
-    @FilterField(operation = FilterOperation.LIKE)
+    @FilterField(operation = FilterOperation.LIKE.class)
     private String title;
-    @FilterField(operation = FilterOperation.GT, key = "birthDate")
-    @FilterField(operation = FilterOperation.LTE, key = "startDate")
-    @FilterField(operation = FilterOperation.GTE, key = "endDate", orNull = true)
-    @FilterField(operation = FilterOperation.LT, key = "deathDate", orNull = true)
+    @FilterField(operation = FilterOperation.GT.class, key = "birthDate")
+    @FilterField(operation = FilterOperation.LTE.class, key = "startDate")
+    @FilterField(operation = FilterOperation.GTE.class, key = "endDate", orNull = true)
+    @FilterField(operation = FilterOperation.LT.class, key = "deathDate", orNull = true)
     private LocalDate validDate;
 
-    @FilterField(operation = FilterOperation.IN, key = "status")
+    @FilterField(operation = FilterOperation.IN.class, key = "status")
     private List<String> codes;
-    @FilterField(operation = FilterOperation.NOT_IN, key = "status")
+    @FilterField(operation = FilterOperation.NOTIN.class, key = "status")
     private List<String> excludes;
 }

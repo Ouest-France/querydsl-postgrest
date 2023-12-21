@@ -1,12 +1,12 @@
 package fr.ouestfrance.querydsl.postgrest.mappers;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 import fr.ouestfrance.querydsl.FilterOperation;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.QueryFilter;
-
-import java.util.Collection;
-import java.util.stream.Collectors;
 
 
 /**
@@ -23,7 +23,7 @@ public class NotInMapper extends AbstractMapper {
     }
 
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.NOT_IN;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.NOTIN.class;
     }
 }

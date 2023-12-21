@@ -15,8 +15,8 @@ public class PostRequestWithSize {
     // size = $size OR (minSize < size AND maxSize > size)
     @FilterField(key = "size", groupName = "sizeOrGroup")
     @FilterFields(groupName = "sizeOrGroup", value = {
-            @FilterField(key = "filterFormats.minSize", operation = FilterOperation.GTE),
-            @FilterField(key = "filterFormats.maxSize", operation = FilterOperation.LTE, orNull = true)
+            @FilterField(key = "filterFormats.minSize", operation = FilterOperation.GTE.class),
+            @FilterField(key = "filterFormats.maxSize", operation = FilterOperation.LTE.class, orNull = true)
     })
     private String size;
 }

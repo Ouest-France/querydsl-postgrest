@@ -11,7 +11,8 @@
 
 </div>
 
-**QueryDSL-PostgRest** is a [PostgRest](https://github.com/postgrest/postgrest) implementation of [QueryDSL](https://github.com/Ouest-France/querydsl) library 
+**QueryDSL-PostgRest** is a [PostgRest](https://github.com/postgrest/postgrest) implementation
+of [QueryDSL](https://github.com/Ouest-France/querydsl) library
 and provides class and annotation to improve your developer experience using PostgRest.
 
 **PostgREST** is an open source project that provides a fully RESTful API from any existing PostgreSQL database
@@ -44,7 +45,8 @@ implementation 'fr.ouestfrance.querydsl:querydsl-postgrest:${querydsl-postgrest.
 QueryDsl postgrest provides class to simplify querying postgrest api using PostgrestClient,
 It actually provides by default WebClient adapter `PostgrestWebClient` adapter.
 
-It's really easy to create your own HttpClientAdapter (RestTemplate, OkHttpClient, HttpConnexion, ...) by implementing `PostgrestClient` interface.
+It's really easy to create your own HttpClientAdapter (RestTemplate, OkHttpClient, HttpConnexion, ...) by
+implementing `PostgrestClient` interface.
 
 You can also specify authenticators, interceptors (retry, transform) and every configuration (timeout, default headers,
 cookies, ...) you need to deploy.
@@ -75,7 +77,6 @@ public class PostgrestConfiguration {
 }
 ```
 
-
 ### Create your first repository
 
 #### Specify your first search criteria
@@ -95,19 +96,20 @@ import lombok.Setter;
 public class UserSearch {
     @FilterField
     String id;
-    @FilterField(operation = FilterOperation.LIKE)
+    @FilterField(operation = FilterOperation.LIKE.class)
     String name;
 }
 ```
 
 *@Since 1.1.0 - Record Support*
+
 ```java
 public record UserSearch(
         @FilterField String id,
-        @FilterField(operation = FilterOperation.LIKE) String name
-){}
+        @FilterField(operation = FilterOperation.LIKE.class) String name
+) {
+}
 ```
-
 
 #### Create your repository
 
@@ -115,7 +117,7 @@ To access data, you have to create Repository for your type and put `@PostgrestC
 
 | Property      | Required | Format | Description                                                 | Example         |
 |---------------|----------|--------|-------------------------------------------------------------|-----------------|
-| resource      | O        | String | Resource name in the postgrest api                         | "users"         |
+| resource      | O        | String | Resource name in the postgrest api                          | "users"         |
 | countStrategy | X        | String | Count strategy (exact, planned, estimated) default is exact | CountType.EXACT |
 
 ```java
@@ -191,14 +193,14 @@ public class UserService {
 
 ### Advanced features
 
-
 #### Vertical filtering
 
 When certain columns are wide (such as those holding binary data), it is more efficient for the server to withhold them
 in a response. The client can specify which columns are required using the select parameter.
 This can be defined by annotation `@Select`
 
-Select annotation can be added on the Repository but also to the criteria object that allow you to add specific selection for filtering
+Select annotation can be added on the Repository but also to the criteria object that allow you to add specific
+selection for filtering
 
 | Property | Required | Format | Description              | Example     |
 |----------|----------|--------|--------------------------|-------------|
@@ -209,13 +211,16 @@ You can add extra selection by adding `@Select` annotation.
 In this example there is an inner join on `Posts.author` and selecting only `firstName` and `lastName`
 
 ```java
+
 @PostgrestConfiguration(resource = "posts")
-@Select(alias="author", value="author!inner(firstName, lastName)")
+@Select(alias = "author", value = "author!inner(firstName, lastName)")
 public class PostRepository extends PostgrestRepository<Post> {
-    
+
 }
 ```
+
 Will return json like this :
+
 ```json
 [
   {
@@ -239,7 +244,9 @@ Will return json like this :
 
 #### Headers
 
-This library allow strategy based on `Prefer` header see official [PostgREST Documentation](https://postgrest.org/en/stable/references/api/preferences.html) by adding `@Header` annotation over your Repositoru
+This library allow strategy based on `Prefer` header see
+official [PostgREST Documentation](https://postgrest.org/en/stable/references/api/preferences.html) by adding `@Header`
+annotation over your Repositoru
 
 ```java
 // Return representation object for all functions
@@ -252,7 +259,8 @@ public class PostRepository extends PostgrestRepository<Post> {
 
 #### Logical condition
 
-Any chance you want to have a more complex condition, it's possible to make mixin or / and condition by using `groupName`
+Any chance you want to have a more complex condition, it's possible to make mixin or / and condition by
+using `groupName`
 
 ```java
 
@@ -264,13 +272,14 @@ public class PostRequestWithSize {
     // size = $size OR (filterFormats.minSize < size AND filterFormats.maxSize > size)
     @FilterField(key = "size", groupName = "sizeOrGroup")
     @FilterFields(groupName = "sizeOrGroup", value = {
-            @FilterField(key = "filterFormats.minSize", operation = FilterOperation.GTE),
-            @FilterField(key = "filterFormats.maxSize", operation = FilterOperation.LTE, orNull = true)
+            @FilterField(key = "filterFormats.minSize", operation = FilterOperation.GTE.class),
+            @FilterField(key = "filterFormats.maxSize", operation = FilterOperation.LTE.class, orNull = true)
     })
     private String size;
 }
 ```
-or on multiple fields 
+
+or on multiple fields
 
 ```java
 public class PostRequestWithAuthorOrSubject {
@@ -286,6 +295,15 @@ public class PostRequestWithAuthorOrSubject {
 
 ```
 
+#### PostgrestFilterOperation
+
+extends FilterOperation with
+
+| Operator | Description                       |
+|----------|-----------------------------------|
+| ILIKE    | Case-insensitive LIKE             |  
+| CS       | Contains for JSON/Range datatype  |
+| CD       | Contained for JSON/Range datatype |
 
 ## Need Help ?
 

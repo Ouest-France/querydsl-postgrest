@@ -16,7 +16,7 @@ public class GreaterThanMapper extends AbstractMapper {
 
 
     @Override
-    public FilterOperation operation() {
-        return FilterOperation.GT;
+    public Class<? extends FilterOperation> operation() {
+        return FilterOperation.GT.class;
     }
 }
