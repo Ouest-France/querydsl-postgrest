@@ -14,6 +14,7 @@ public class Range {
     /**
      * Range regexp
      */
+    @SuppressWarnings("java:S5852")
     private static final Pattern REGEXP = Pattern.compile("(?<offset>\\d+)-(?<limit>\\d+)/(?<total>\\d+)");
     /**
      * Start of the range

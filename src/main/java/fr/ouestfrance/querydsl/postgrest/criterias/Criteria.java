@@ -3,7 +3,6 @@ package fr.ouestfrance.querydsl.postgrest.criterias;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.List;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
