@@ -9,6 +9,7 @@ import org.apache.commons.lang3.reflect.TypeUtils;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,6 +23,14 @@ import java.util.Optional;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostgrestWebClient implements PostgrestClient {
 
+    /**
+     * Content type
+     */
+    private static final String CONTENT_TYPE = "Content-Type";
+
+    /**
+     * webClient
+     */
     private final WebClient webClient;
 
     /**
@@ -31,7 +40,8 @@ public class PostgrestWebClient implements PostgrestClient {
      * @return PostgrestWebClient implementation
      */
     public static PostgrestWebClient of(WebClient webClient) {
-        return new PostgrestWebClient(webClient);
+        return
+                new PostgrestWebClient(webClient);
     }
 
     @Override
@@ -63,6 +73,8 @@ public class PostgrestWebClient implements PostgrestClient {
 
     private static void safeAdd(MultiValueMap<String, String> headers, HttpHeaders httpHeaders) {
         Optional.ofNullable(headers).ifPresent(httpHeaders::addAll);
+        // Add contentType with default on call if webclient default is not set
+        httpHeaders.put(CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON_VALUE));
     }
 
     @Override
