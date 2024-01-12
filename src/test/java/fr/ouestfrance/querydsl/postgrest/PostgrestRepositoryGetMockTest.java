@@ -2,6 +2,7 @@ package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.app.*;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
+import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.Sort;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
@@ -43,6 +44,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertNotNull(search);
         assertNotNull(search.iterator());
         assertEquals(2, search.size());
+        assertFalse(search.hasNext());
     }
 
     private ResponseEntity<List<Object>> ok(List<Object> data) {
@@ -81,6 +83,75 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         MultiValueMap<String, String> value = headerArgs.getValue();
         assertEquals("0-9", value.getFirst("Range"));
         assertEquals("items", value.getFirst("Range-Unit"));
+        // Assert pagination
+        assertNotNull(search.getPageable());
+        assertEquals(10, search.getPageable().getPageSize());
+        assertEquals(0, search.getPageable().getPageNumber());
+        assertEquals(2, search.getTotalElements());
+        assertEquals(1, search.getTotalPages());
+        assertFalse(search.hasNext());
+        assertNotNull(search.getPageable().previous());
+        assertEquals(0, search.getPageable().previous().getPageNumber());
+    }
+
+    @Test
+    void shouldSearchWithNextPaginate() {
+        PostRequest request = new PostRequest();
+        request.setUserId(1);
+        request.setId(1);
+        request.setTitle("Test*");
+        request.setCodes(List.of("a", "b", "c"));
+        request.setExcludes(List.of("z"));
+        request.setValidDate(LocalDate.of(2023, 11, 10));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, String>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new PageImpl<>(List.of(new Post()), null, 2, 2));
+
+        Page<Post> search = repository.search(request, Pageable.ofSize(1, Sort.by(Sort.Order.asc("id"))));
+        assertNotNull(search);
+        assertEquals(1, search.size());
+        assertTrue(search.hasNext());
+        // Assert pagination
+        assertNotNull(search.getPageable());
+        assertEquals(1, search.getPageable().getPageSize());
+        assertEquals(0, search.getPageable().getPageNumber());
+        assertEquals(2, search.getTotalElements());
+        assertEquals(2, search.getTotalPages());
+        // Assert next pagination
+        assertNotNull(search.getPageable().next());
+        assertEquals(1, search.getPageable().next().getPageSize());
+        assertEquals(1, search.getPageable().next().getPageNumber());
+        assertEquals(search.getPageable().getSort(), search.getPageable().next().getSort());
+
+    }
+
+    @Test
+    void shouldSearchWithPreviousPaginate() {
+        PostRequest request = new PostRequest();
+        request.setUserId(1);
+        request.setId(1);
+        request.setTitle("Test*");
+        request.setCodes(List.of("a", "b", "c"));
+        request.setExcludes(List.of("z"));
+        request.setValidDate(LocalDate.of(2023, 11, 10));
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<MultiValueMap<String, String>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new PageImpl<>(List.of(new Post()), null, 2, 2));
+
+        Page<Post> search = repository.search(request, Pageable.ofSize(1, 1, Sort.by(Sort.Order.asc("id"))));
+        assertNotNull(search);
+        assertEquals(1, search.size());
+        assertFalse(search.hasNext());
+        // Assert pagination
+        assertNotNull(search.getPageable());
+        assertEquals(1, search.getPageable().getPageSize());
+        assertEquals(1, search.getPageable().getPageNumber());
+        assertEquals(2, search.getTotalElements());
+        assertEquals(2, search.getTotalPages());
+        // Assert previous pagination
+        assertNotNull(search.getPageable().previous());
+        assertEquals(1, search.getPageable().previous().getPageSize());
+        assertEquals(0, search.getPageable().previous().getPageNumber());
     }
 
     @Test
