@@ -97,4 +97,11 @@ public interface Page<T> extends Iterable<T> {
     default <U> Page<U> map(Function<T, U> converter) {
         return new PageImpl<>(stream().map(converter).toList(), getPageable(), getTotalElements(), getTotalPages());
     }
+
+    default boolean hasNext() {
+        if(getPageable() == null) {
+            return false;
+        }
+        return getPageable().getPageNumber() + 1 < getTotalPages();
+    }
 }

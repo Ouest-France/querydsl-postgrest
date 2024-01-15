@@ -7,6 +7,7 @@ public interface Pageable {
 
     /**
      * Create a simple pageRequest with size and no declarative sort
+     *
      * @param pageSize number of element in one page
      * @return pageable object
      */
@@ -16,16 +17,31 @@ public interface Pageable {
 
     /**
      * Create a simple pageRequest with size and declarative sort
+     *
      * @param pageSize number of element in one page
-     * @param sort sort information
+     * @param sort     sort information
      * @return pageable object
      */
     static Pageable ofSize(int pageSize, Sort sort) {
-        return new PageRequest(0, pageSize, sort);
+        return ofSize(0, pageSize, sort);
+    }
+
+
+    /**
+     * Create a simple pageRequest with page number and size and declarative sort
+     *
+     * @param pageNumber number of the request
+     * @param pageSize   number of element in one page
+     * @param sort       sort information
+     * @return pageable object
+     */
+    static Pageable ofSize(int pageNumber, int pageSize, Sort sort) {
+        return new PageRequest(pageNumber, pageSize, sort);
     }
 
     /**
      * Create an un paged
+     *
      * @return pageable object
      */
     static Pageable unPaged() {
@@ -34,24 +50,28 @@ public interface Pageable {
 
     /**
      * Request page size
+     *
      * @return page size
      */
     int getPageSize();
 
     /**
      * Request page number
+     *
      * @return page number
      */
     int getPageNumber();
 
     /**
      * Request sort
+     *
      * @return sort
      */
     Sort getSort();
 
     /**
      * Transform a Pageable to range representation
+     *
      * @return transform a pagination item to range value
      */
     default String toRange() {
@@ -77,5 +97,11 @@ public interface Pageable {
         return pageOffset() + getPageSize() - 1;
     }
 
+    default Pageable next() {
+        return new PageRequest(getPageNumber() + 1, getPageSize(), getSort());
+    }
 
+    default Pageable previous() {
+        return getPageNumber() == 0 ? this : new PageRequest(getPageNumber() - 1, getPageSize(), getSort());
+    }
 }
