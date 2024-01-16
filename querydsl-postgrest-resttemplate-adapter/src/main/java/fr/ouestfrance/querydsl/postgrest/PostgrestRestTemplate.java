@@ -51,7 +51,7 @@ public class PostgrestRestTemplate implements PostgrestClient {
                 .map(x -> {
                     PageImpl<T> page = new PageImpl<>(x, null, x.size(), 1);
                     List<String> contentRangeHeaders = response.getHeaders().get("Content-Range");
-                    if (contentRangeHeaders != null && !contentRangeHeaders.isEmpty()) {
+                    if (contentRangeHeaders != null) {
                         Range range = Range.of(contentRangeHeaders.stream().findFirst().toString());
                         page.withRange(range);
                     }

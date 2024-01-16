@@ -6,6 +6,7 @@ import fr.ouestfrance.querydsl.postgrest.app.PostRequest;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequestWithAuthorOrSubject;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequestWithSize;
 import fr.ouestfrance.querydsl.postgrest.app.PublicationRequest;
+import fr.ouestfrance.querydsl.postgrest.criterias.Criteria;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
@@ -103,6 +104,34 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
     }
 
     @Test
+    void shouldFindById() {
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post()));
+        Page<Post> search = repository.search(Criteria.byId("1"), Pageable.ofSize(6));
+        // Assert query captors
+        MultiValueMap<String, String> queries = queryArgs.getValue();
+        assertEquals("eq.1", queries.getFirst("id"));
+        log.info("queries {}", queries);
+        assertNotNull(search);
+        assertFalse(search.getData().isEmpty());
+        search.getData().stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
+    void shouldFindByIds() {
+        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post()));
+        Page<Post> search = repository.search(Criteria.byIds("1", "2", "3"), Pageable.ofSize(6));
+        // Assert query captors
+        MultiValueMap<String, String> queries = queryArgs.getValue();
+        assertEquals("in.(1,2,3)", queries.getFirst("id"));
+        log.info("queries {}", queries);
+        assertNotNull(search);
+        assertFalse(search.getData().isEmpty());
+        search.getData().stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
     void shouldSearchWithNextPaginate() {
         PostRequest request = new PostRequest();
         request.setUserId(1);
@@ -111,9 +140,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setCodes(List.of("a", "b", "c"));
         request.setExcludes(List.of("z"));
         request.setValidDate(LocalDate.of(2023, 11, 10));
-        ArgumentCaptor<MultiValueMap<String, String>> queryArgs = multiMapCaptor();
-        ArgumentCaptor<MultiValueMap<String, String>> headerArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new PageImpl<>(List.of(new Post()), null, 2, 2));
+        when(webClient.search(anyString(), any(),any(), eq(Post.class))).thenReturn(new PageImpl<>(List.of(new Post()), null, 2, 2));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(1, Sort.by(Sort.Order.asc("id"))));
         assertNotNull(search);
