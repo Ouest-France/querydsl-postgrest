@@ -24,12 +24,10 @@ import java.util.Optional;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostgrestRestTemplate implements PostgrestClient {
 
-
     /**
      * restTemplate
      */
     private final RestTemplate restTemplate;
-
 
     /**
      * Postgrest restTemplate adapter
@@ -46,7 +44,7 @@ public class PostgrestRestTemplate implements PostgrestClient {
                               MultiValueMap<String, String> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = restTemplate.exchange(restTemplate.getUriTemplateHandler().expand(UriComponentsBuilder.fromPath(resource).queryParams(params).build().toString(), new HashMap<>()), HttpMethod.GET, new HttpEntity<>(null, headers), listRef(clazz));
         // Retrieve result headers
-        return Optional.ofNullable(response)
+        return Optional.of(response)
                 .map(HttpEntity::getBody)
                 .map(x -> {
                     PageImpl<T> page = new PageImpl<>(x, null, x.size(), 1);
@@ -59,12 +57,10 @@ public class PostgrestRestTemplate implements PostgrestClient {
                 }).orElse(Page.empty());
     }
 
-
     @Override
     public <T> List<T> post(String resource, List<Object> value, MultiValueMap<String, String> headers, Class<T> clazz) {
         return restTemplate.exchange(resource, HttpMethod.POST, new HttpEntity<>(value, headers), listRef(clazz)).getBody();
     }
-
 
     @Override
     public <T> List<T> patch(String resource, MultiValueMap<String, String> params, Object value, MultiValueMap<String, String> headers, Class<T> clazz) {
@@ -79,6 +75,4 @@ public class PostgrestRestTemplate implements PostgrestClient {
     private static <T> ParameterizedTypeReference<List<T>> listRef(Class<T> clazz) {
         return ParameterizedTypeReference.forType(TypeUtils.parameterize(List.class, clazz));
     }
-
-
 }
