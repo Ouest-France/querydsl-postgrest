@@ -3,9 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>fr.ouestfrance.querydsl</groupId>
-    <artifactId>querydsl-postgrest</artifactId>
+    <artifactId>querydsl-postgrest-parent</artifactId>
     <version>1.2.2-SNAPSHOT</version>
-    <name>querydsl-postgrest</name>
+    <packaging>pom</packaging>
+    <name>querydsl-postgrest-parent</name>
     <description>Implementation of unified queryDSL for postgRest API</description>
     <url>https://github.com/ouest-france/querydsl-postgrest</url>
 
@@ -23,6 +24,11 @@
             <organizationUrl>https://www.ouest-france.fr/qui-sommes-nous</organizationUrl>
         </developer>
     </developers>
+    <modules>
+        <module>querydsl-postgrest-webclient-adapter</module>
+        <module>querydsl-postgrest-resttemplate-adapter</module>
+        <module>querydsl-postgrest</module>
+    </modules>
 
 
     <properties>
@@ -57,7 +63,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
-            <artifactId>spring-webflux</artifactId>
+            <artifactId>spring-core</artifactId>
             <version>6.1.1</version>
         </dependency>
         <!-- test dependencies -->
@@ -150,7 +156,7 @@
                 <executions>
                     <execution>
                         <id>attach-sources</id>
-                        <phase>verify</phase>
+                        <phase>deploy</phase>
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
