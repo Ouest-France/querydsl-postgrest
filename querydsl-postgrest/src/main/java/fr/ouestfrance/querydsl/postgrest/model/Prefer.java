@@ -69,10 +69,10 @@ public final class Prefer {
         /**
          *  You can make an upsert with POST and the Prefer: resolution=merge-duplicates header
          */
-        public static final String MERGE_DUPLICATES = "resolution=merge_duplicates";
+        public static final String MERGE_DUPLICATES = "resolution=merge-duplicates";
         /**
          * You can also choose to ignore the duplicates with Prefer: resolution=ignore-duplicates
          */
-        public static final String IGNORE_DUPLICATES = "resolution=ignore_duplicates";
+        public static final String IGNORE_DUPLICATES = "resolution=ignore-duplicates";
     }
 }
