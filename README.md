@@ -24,7 +24,6 @@ and provides class and annotation to improve your developer experience using Pos
 Add the following dependency to your Maven project:
 
 ```xml
-
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest</artifactId>
@@ -51,7 +50,16 @@ implementing `PostgrestClient` interface.
 You can also specify authenticators, interceptors (retry, transform) and every configuration (timeout, default headers,
 cookies, ...) you need to deploy.
 
-**Webclient configuration example**
+#### WebClient configuration example
+
+Add the dependency : 
+```xml
+<dependency>
+    <groupId>fr.ouestfrance.querydsl</groupId>
+    <artifactId>querydsl-postgrest-webclient-adapter</artifactId>
+    <version>${querydsl-postgrest.version}</version>
+</dependency>
+```
 
 ```java
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,6 +81,42 @@ public class PostgrestConfiguration {
                 .build();
 
         return PostgrestWebClient.of(webclient);
+    }
+}
+```
+
+#### RestTemplate configuration example
+
+Add the dependency : 
+```xml
+<dependency>
+    <groupId>fr.ouestfrance.querydsl</groupId>
+    <artifactId>querydsl-postgrest-resttemplate-adapter</artifactId>
+    <version>${querydsl-postgrest.version}</version>
+</dependency>
+```
+
+```java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.PostgrestRestTemplate;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+
+@Configuration
+public class PostgrestConfiguration {
+
+    @Bean
+    public PostgrestClient podstgrestClient() {
+        String serviceUrl = "http://localhost:9000";
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setUriTemplateHandler(new DefaultUriBuilderFactory(serviceUrl));
+        restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
+        return PostgrestRestTemplate.of(webclient);
     }
 }
 ```

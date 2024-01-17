@@ -3,9 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>fr.ouestfrance.querydsl</groupId>
-    <artifactId>querydsl-postgrest</artifactId>
+    <artifactId>querydsl-postgrest-bom</artifactId>
     <version>1.2.2-SNAPSHOT</version>
-    <name>querydsl-postgrest</name>
+    <packaging>pom</packaging>
+    <name>querydsl-postgrest-bom</name>
     <description>Implementation of unified queryDSL for postgRest API</description>
     <url>https://github.com/ouest-france/querydsl-postgrest</url>
 
@@ -23,6 +24,11 @@
             <organizationUrl>https://www.ouest-france.fr/qui-sommes-nous</organizationUrl>
         </developer>
     </developers>
+    <modules>
+        <module>querydsl-postgrest</module>
+        <module>querydsl-postgrest-webclient-adapter</module>
+        <module>querydsl-postgrest-resttemplate-adapter</module>
+    </modules>
 
 
     <properties>
@@ -50,33 +56,12 @@
     </distributionManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>fr.ouestfrance.querydsl</groupId>
-            <artifactId>querydsl</artifactId>
-            <version>1.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webflux</artifactId>
-            <version>6.1.1</version>
-        </dependency>
         <!-- test dependencies -->
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.28</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.15.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.13.0</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -111,22 +96,16 @@
                 <version>3.2.2</version>
             </plugin>
             <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
                 <executions>
                     <execution>
-                        <id>default-prepare-agent</id>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
                         <goals>
-                            <goal>prepare-agent</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                        <phase>test</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -144,16 +123,22 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
                 <executions>
                     <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
+                        <id>default-prepare-agent</id>
                         <goals>
-                            <goal>jar-no-fork</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <phase>test</phase>
                     </execution>
                 </executions>
             </plugin>
