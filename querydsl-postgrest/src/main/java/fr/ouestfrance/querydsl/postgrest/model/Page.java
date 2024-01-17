@@ -3,6 +3,7 @@ package fr.ouestfrance.querydsl.postgrest.model;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -99,9 +100,8 @@ public interface Page<T> extends Iterable<T> {
     }
 
     default boolean hasNext() {
-        if(getPageable() == null) {
-            return false;
-        }
-        return getPageable().getPageNumber() + 1 < getTotalPages();
+        return Optional.ofNullable(getPageable())
+                .map(pageable -> pageable.getPageNumber() + 1 < getTotalPages())
+                .orElse(false);
     }
 }

@@ -10,9 +10,7 @@ import lombok.SneakyThrows;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -26,39 +24,27 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockServerExtension.class)
 @MockServerSettings(ports = 8007)
-class PostrgrestRepositoryTest {
+class PostgrestRepositoryTest {
 
     private PostgrestRepository<Post> repository;
 
-    private final ClientAndServer client;
-
-    public PostrgrestRepositoryTest(ClientAndServer client) {
-        this.client = client;
-    }
-
     @BeforeEach
-    void beforeEach() {
+    void beforeEach(MockServerClient client) {
+        client.reset();
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setUriTemplateHandler(new DefaultUriBuilderFactory("http://localhost:8007"));
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
         repository = new PostRepository(PostgrestRestTemplate.of(restTemplate));
-
-        client.reset();
     }
 
     @Test
-    void shouldSearchPosts() {
+    void shouldSearchPosts(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
         Page<Post> search = repository.search(new PostRequest(), Pageable.ofSize(6));
-        System.out.println(search.getTotalElements());
-        System.out.println(search.getTotalPages());
         assertEquals(300, search.getTotalElements());
         assertEquals(50, search.getTotalPages());
         assertNotNull(search);
@@ -67,12 +53,10 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldSearchPostsWithoutContentRange() {
+    void shouldSearchPostsWithoutContentRange(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json"));
         Page<Post> search = repository.search(new PostRequest(), Pageable.ofSize(6));
-        System.out.println(search.getTotalElements());
-        System.out.println(search.getTotalPages());
         assertEquals(6, search.getTotalElements());
         assertEquals(1, search.getTotalPages());
         assertNotNull(search);
@@ -81,14 +65,12 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldFindById() {
+    void shouldFindById(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts")
                         .withQueryStringParameter("id", "eq.1")
                         .withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
         Page<Post> search = repository.search(Criteria.byId("1"), Pageable.ofSize(6));
-        System.out.println(search.getTotalElements());
-        System.out.println(search.getTotalPages());
         assertEquals(300, search.getTotalElements());
         assertEquals(50, search.getTotalPages());
         assertNotNull(search);
@@ -97,14 +79,12 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldSearchGetByIds() {
+    void shouldSearchGetByIds(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts")
                         .withQueryStringParameter("id", "in.(1,2,3)")
                         .withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
         Page<Post> search = repository.search(Criteria.byIds("1", "2", "3"), Pageable.ofSize(6));
-        System.out.println(search.getTotalElements());
-        System.out.println(search.getTotalPages());
         assertEquals(300, search.getTotalElements());
         assertEquals(50, search.getTotalPages());
         assertNotNull(search);
@@ -113,7 +93,7 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldUpsertPost() {
+    void shouldUpsertPost(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts"))
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
@@ -124,7 +104,7 @@ class PostrgrestRepositoryTest {
 
 
     @Test
-    void shouldPatchPost() {
+    void shouldPatchPost(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
                 .respond(jsonFileResponse("posts.json"));
         PostRequest criteria = new PostRequest();
@@ -135,7 +115,7 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldDeletePost() {
+    void shouldDeletePost(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
                 .respond(jsonFileResponse("posts.json"));
         PostRequest criteria = new PostRequest();

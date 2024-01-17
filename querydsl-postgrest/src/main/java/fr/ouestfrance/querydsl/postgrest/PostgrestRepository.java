@@ -13,10 +13,8 @@ import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
-import org.springframework.core.GenericTypeResolver;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
 /**
@@ -28,9 +26,9 @@ public class PostgrestRepository<T> implements Repository<T> {
 
     private final QueryDslProcessorService<Filter> processorService = new PostgrestQueryProcessorService();
     private final PostgrestConfiguration annotation;
-    private final Map<Header.Method, MultiValueMap<String, String>> headersMap = new EnumMap<>(Header.Method.class);
+    private final Map<Header.Method, Map<String, List<String>>> headersMap = new EnumMap<>(Header.Method.class);
     private final PostgrestClient client;
-    private final Class<T> clazz;
+    private Class<T> clazz;
 
     /**
      * Postgrest Repository constructor
@@ -45,25 +43,32 @@ public class PostgrestRepository<T> implements Repository<T> {
         }
         annotation = getClass().getAnnotation(PostgrestConfiguration.class);
         // Create headerMap
-        Arrays.stream(getClass().getAnnotationsByType(Header.class)).forEach(header -> Arrays.stream(header.methods())
-                .forEach(method ->
-                        headersMap.computeIfAbsent(method, x -> new LinkedMultiValueMap<>())
-                                .addAll(header.key(), Arrays.asList(header.value()))
-                )
-        );
-        //noinspection unchecked
-        clazz = (Class<T>) GenericTypeResolver.resolveTypeArgument(getClass(), PostgrestRepository.class);
+        Arrays.stream(getClass().getAnnotationsByType(Header.class))
+                .forEach(header -> Arrays.stream(header.methods())
+                        .forEach(method ->
+                                headersMap.computeIfAbsent(method, x -> new LinkedHashMap<>())
+                                        .computeIfAbsent(header.key(), x -> new ArrayList<>())
+                                        .addAll(Arrays.asList(header.value()))
+                        )
+                );
+
+        if (getClass().getGenericSuperclass() instanceof ParameterizedType type) {
+            //noinspection unchecked
+            clazz = (Class<T>) type.getActualTypeArguments()[0];
+        }
+
     }
 
     @Override
     public Page<T> search(Object criteria, Pageable pageable) {
         List<Filter> queryParams = processorService.process(criteria);
-        MultiValueMap<String, String> headers = new LinkedMultiValueMap<>(headerMap(Header.Method.GET));
+        Map<String, List<String>> headers = headerMap(Header.Method.GET);
         // Add pageable if present
         if (pageable.getPageSize() > 0) {
-            headers.add("Range-Unit", "items");
-            headers.add("Range", pageable.toRange());
-            headers.add("Prefers", "count=" + annotation.countStrategy().name().toLowerCase());
+            headers.put("Range-Unit", List.of("items"));
+            headers.put("Range", List.of(pageable.toRange()));
+            headers.computeIfAbsent("Prefers", x -> new ArrayList<>())
+                    .add("count=" + annotation.countStrategy().name().toLowerCase());
         }
         // Add sort if present
         if (pageable.getSort() != null) {
@@ -108,9 +113,9 @@ public class PostgrestRepository<T> implements Repository<T> {
      * @param filters list of filters
      * @return map of query strings
      */
-    private MultiValueMap<String, String> toMap(List<Filter> filters) {
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        filters.forEach(x -> map.add(x.getKey(), x.getFilterString()));
+    private Map<String, List<String>> toMap(List<Filter> filters) {
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        filters.forEach(x -> map.computeIfAbsent(x.getKey(), key -> new ArrayList<>()).add(x.getFilterString()));
         return map;
     }
 
@@ -133,10 +138,9 @@ public class PostgrestRepository<T> implements Repository<T> {
                 attributes.addAll(Arrays.stream(criteriaAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value())).toList());
             }
         }
-        if (attributes.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(SelectFilter.of(attributes));
+        return Optional.of(attributes)
+                .filter(x -> !x.isEmpty())
+                .map(SelectFilter::of);
     }
 
     /**
@@ -174,7 +178,10 @@ public class PostgrestRepository<T> implements Repository<T> {
      * @param method method
      * @return header map
      */
-    private MultiValueMap<String, String> headerMap(Header.Method method) {
-        return Optional.ofNullable(headersMap.get(method)).orElse(new LinkedMultiValueMap<>());
+    private Map<String, List<String>> headerMap(Header.Method method) {
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        Optional.ofNullable(headersMap.get(method))
+                .ifPresent(map::putAll);
+        return map;
     }
 }

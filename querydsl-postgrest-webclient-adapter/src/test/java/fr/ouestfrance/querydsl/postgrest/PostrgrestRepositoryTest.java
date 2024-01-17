@@ -24,7 +24,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockServerExtension.class)
 @MockServerSettings(ports = 8007)
 class PostrgrestRepositoryTest {
 
@@ -32,14 +31,9 @@ class PostrgrestRepositoryTest {
             .baseUrl("http://localhost:8007/")
             .build()));
 
-    private final ClientAndServer client;
-
-    public PostrgrestRepositoryTest(ClientAndServer client) {
-        this.client = client;
-    }
 
     @Test
-    void shouldSearchPosts() {
+    void shouldSearchPosts(ClientAndServer client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
         Page<Post> search = repository.search(new PostRequest(), Pageable.ofSize(6));
@@ -53,7 +47,7 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldFindById() {
+    void shouldFindById(ClientAndServer client) {
         client.when(HttpRequest.request().withPath("/posts")
                         .withQueryStringParameter("id", "eq.1")
                         .withQueryStringParameter("select", "*,authors(*)"))
@@ -69,7 +63,7 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldSearchGetByIds() {
+    void shouldSearchGetByIds(ClientAndServer client) {
         client.when(HttpRequest.request().withPath("/posts")
                         .withQueryStringParameter("id", "in.(1,2,3)")
                         .withQueryStringParameter("select", "*,authors(*)"))
@@ -85,7 +79,7 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldUpsertPost() {
+    void shouldUpsertPost(ClientAndServer client) {
         client.when(HttpRequest.request().withPath("/posts"))
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
@@ -96,7 +90,7 @@ class PostrgrestRepositoryTest {
 
 
     @Test
-    void shouldPatchPost() {
+    void shouldPatchPost(ClientAndServer client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
                 .respond(jsonFileResponse("posts.json"));
         PostRequest criteria = new PostRequest();
@@ -107,7 +101,7 @@ class PostrgrestRepositoryTest {
     }
 
     @Test
-    void shouldDeletePost() {
+    void shouldDeletePost(ClientAndServer client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
                 .respond(jsonFileResponse("posts.json"));
         PostRequest criteria = new PostRequest();

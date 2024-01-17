@@ -8,9 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.springframework.util.MultiValueMap;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,7 +36,7 @@ class PostgrestRepositoryUpsertMockTest extends AbstractRepositoryMockTest {
     void shouldUpsert() {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Object>> postCaptor = ArgumentCaptor.forClass(List.class);
-        ArgumentCaptor<MultiValueMap<String, String>> headerCaptor = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerCaptor = multiMapCaptor();
         String generateId = UUID.randomUUID().toString();
 
         Post save = new Post();
@@ -57,8 +57,8 @@ class PostgrestRepositoryUpsertMockTest extends AbstractRepositoryMockTest {
         Assertions.assertEquals(generateId, saved.getId());
         Assertions.assertEquals(save.getBody(), saved.getBody());
         Assertions.assertEquals(save.getTitle(), saved.getTitle());
-        MultiValueMap<String, String> headers = headerCaptor.getValue();
+        Map<String, List<String>> headers = headerCaptor.getValue();
         assertEquals(2, headers.get("Prefer").size());
-        assertEquals("return=representation", headers.getFirst("Prefer"));
+        assertEquals("return=representation", headers.get("Prefer").stream().findFirst().orElseThrow());
     }
 }

@@ -8,18 +8,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.springframework.util.MultiValueMap;
 
 import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @Slf4j
-class PostgrestRepositoryPatchMockTest extends AbstractRepositoryMockTest{
+class PostgrestRepositoryPatchMockTest extends AbstractRepositoryMockTest {
 
     @Mock
     private PostgrestClient webClient;
@@ -30,19 +29,20 @@ class PostgrestRepositoryPatchMockTest extends AbstractRepositoryMockTest{
     void beforeEach() {
         repository = new PostRepository(webClient);
     }
+
     @Test
     void shouldDelete() {
-        ArgumentCaptor<MultiValueMap<String, String>> queriesCaptor = multiMapCaptor();
-        ArgumentCaptor<MultiValueMap<String, String>> headerCaptor = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> queriesCaptor = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerCaptor = multiMapCaptor();
         Post post = new Post();
         post.setUserId(26);
         when(webClient.patch(anyString(), queriesCaptor.capture(), eq(post), headerCaptor.capture(), eq(Post.class))).thenReturn(List.of(post));
         List<Post> patched = repository.patch(new PostDeleteRequest(List.of("1", "2")), post);
         assertNotNull(patched);
         assertEquals(1, patched.size());
-        MultiValueMap<String, String> queries = queriesCaptor.getValue();
-        assertEquals("in.(1,2)", queries.getFirst("id"));
-        MultiValueMap<String, String> headers = headerCaptor.getValue();
-        assertEquals("return=representation", headers.getFirst("Prefer"));
+        Map<String, List<String>> queries = queriesCaptor.getValue();
+        assertEquals("in.(1,2)", queries.get("id").stream().findFirst().orElseThrow());
+        Map<String, List<String>> headers = headerCaptor.getValue();
+        assertTrue(headers.get("Prefer").contains("return=representation"));
     }
 }

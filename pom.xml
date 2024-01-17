@@ -26,9 +26,9 @@
         </developer>
     </developers>
     <modules>
+        <module>querydsl-postgrest</module>
         <module>querydsl-postgrest-webclient-adapter</module>
         <module>querydsl-postgrest-resttemplate-adapter</module>
-        <module>querydsl-postgrest</module>
     </modules>
 
 

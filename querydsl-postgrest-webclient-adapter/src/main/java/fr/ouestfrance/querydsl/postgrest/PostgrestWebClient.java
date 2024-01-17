@@ -11,10 +11,12 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -45,11 +47,11 @@ public class PostgrestWebClient implements PostgrestClient {
     }
 
     @Override
-    public <T> Page<T> search(String resource, MultiValueMap<String, String> params,
-                              MultiValueMap<String, String> headers, Class<T> clazz) {
+    public <T> Page<T> search(String resource, Map<String, List<String>> params,
+                              Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = webClient.get().uri(uriBuilder -> {
                     uriBuilder.path(resource);
-                    uriBuilder.queryParams(params);
+                    uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
                 }).headers(httpHeaders ->
                         safeAdd(headers, httpHeaders)
@@ -71,14 +73,15 @@ public class PostgrestWebClient implements PostgrestClient {
                 }).orElse(Page.empty());
     }
 
-    private static void safeAdd(MultiValueMap<String, String> headers, HttpHeaders httpHeaders) {
-        Optional.ofNullable(headers).ifPresent(httpHeaders::addAll);
+    private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
+        Optional.ofNullable(headers)
+                .map(PostgrestWebClient::toMultiMap).ifPresent(httpHeaders::addAll);
         // Add contentType with default on call if webclient default is not set
         httpHeaders.put(CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON_VALUE));
     }
 
     @Override
-    public <T> List<T> post(String resource, List<Object> value, MultiValueMap<String, String> headers, Class<T> clazz) {
+    public <T> List<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
         return webClient.post().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     return uriBuilder.build();
@@ -91,10 +94,10 @@ public class PostgrestWebClient implements PostgrestClient {
 
 
     @Override
-    public <T> List<T> patch(String resource, MultiValueMap<String, String> params, Object value, MultiValueMap<String, String> headers, Class<T> clazz) {
+    public <T> List<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
         return webClient.patch().uri(uriBuilder -> {
                     uriBuilder.path(resource);
-                    uriBuilder.queryParams(params);
+                    uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
                 })
                 .bodyValue(value)
@@ -104,10 +107,10 @@ public class PostgrestWebClient implements PostgrestClient {
     }
 
     @Override
-    public <T> List<T> delete(String resource, MultiValueMap<String, String> params, MultiValueMap<String, String> headers, Class<T> clazz) {
+    public <T> List<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz) {
         return webClient.delete().uri(uriBuilder -> {
                     uriBuilder.path(resource);
-                    uriBuilder.queryParams(params);
+                    uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
                 }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
@@ -118,5 +121,8 @@ public class PostgrestWebClient implements PostgrestClient {
         return ParameterizedTypeReference.forType(TypeUtils.parameterize(List.class, clazz));
     }
 
+    private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {
+        return new LinkedMultiValueMap<>(params);
+    }
 
 }

@@ -1,9 +1,9 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.Page;
-import org.springframework.util.MultiValueMap;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Rest interface for querying postgrest
@@ -20,8 +20,8 @@ public interface PostgrestClient {
      * @return ResponseEntity containing the results
      */
 
-    <T> Page<T> search(String resource, MultiValueMap<String, String> params,
-                       MultiValueMap<String, String> headers, Class<T> clazz);
+    <T> Page<T> search(String resource, Map<String, List<String>> params,
+                       Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Save body
@@ -33,7 +33,7 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of inserted objects
      */
-    <T> List<T> post(String resource, List<Object> value, MultiValueMap<String, String> headers, Class<T> clazz);
+    <T> List<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Patch data
@@ -46,7 +46,7 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of patched objects
      */
-    <T> List<T> patch(String resource, MultiValueMap<String, String> params, Object value, MultiValueMap<String, String> headers, Class<T> clazz);
+    <T> List<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Delete data
@@ -58,6 +58,6 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of deleted objects
      */
-    <T> List<T> delete(String resource, MultiValueMap<String, String> params, MultiValueMap<String, String> headers, Class<T> clazz);
+    <T> List<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz);
 
 }
