@@ -1,6 +1,6 @@
 <div align="center" style="text-align:center;padding-top: 15px">
     <img alt="logo-ouest-france" src="https://sipaui.sipaof.fr/downloads/logotheque/ouest-france-couleur.svg" height="100"/>
-    <h1 style="margin: 0;padding: 0">QueryDSL-PostgRest</h1>
+    <h1 style="margin: 0;padding: 0">QueryDSL-PostgRest-WebClient-Adapter</h1>
 </div>
 <div align="center" style="text-align: center">
 
