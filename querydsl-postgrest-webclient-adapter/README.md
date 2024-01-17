@@ -1,6 +1,6 @@
 <div align="center" style="text-align:center;padding-top: 15px">
     <img alt="logo-ouest-france" src="https://sipaui.sipaof.fr/downloads/logotheque/ouest-france-couleur.svg" height="100"/>
-    <h1 style="margin: 0;padding: 0">QueryDSL-PostgRest-WebClient-Adapter</h1>
+    <h1 style="margin: 0;padding: 0">PostgRest-WebClient-Adapter</h1>
 </div>
 <div align="center" style="text-align: center">
 
@@ -11,7 +11,7 @@
 
 </div>
 
-**QueryDSL-PostgRest-WebClient-Adapter** is a httpclient adapter of [QueryDSL](https://github.com/Ouest-France/querydsl).
+**QueryDSL-PostgRest-WebClient-Adapter** is a httpclient adapter of [QueryDSL-Postgrest](https://github.com/Ouest-France/querydsl-postgrest).
 
 **PostgREST** is an open source project that provides a fully RESTful API from any existing PostgreSQL database
 
