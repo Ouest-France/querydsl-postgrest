@@ -79,7 +79,6 @@ public interface Repository<T> {
      */
     List<T> patch(Object criteria, Object body);
 
-
     /**
      * Delete items using criteria
      *
@@ -88,4 +87,18 @@ public interface Repository<T> {
      */
     List<T> delete(Object criteria);
 
+    /**
+     * Count items using criteria
+     *
+     * @param criteria criteria to create count query
+     * @return number of items
+     */
+    int count(Object criteria);
+
+    /**
+     * Count items whithout criteria
+     *
+     * @return number of items
+     */
+    int count();
 }

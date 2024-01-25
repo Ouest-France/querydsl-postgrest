@@ -24,6 +24,7 @@ and provides class and annotation to improve your developer experience using Pos
 Add the following dependency to your Maven project:
 
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest</artifactId>
@@ -52,8 +53,10 @@ cookies, ...) you need to deploy.
 
 #### WebClient configuration example
 
-Add the dependency : 
+Add the dependency :
+
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest-webclient-adapter</artifactId>
@@ -87,8 +90,10 @@ public class PostgrestConfiguration {
 
 #### RestTemplate configuration example
 
-Add the dependency : 
+Add the dependency :
+
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest-resttemplate-adapter</artifactId>
@@ -185,6 +190,7 @@ public class UserRepository extends PostgrestRepository<User> {
 | search  | `Page<T>`     | criteria : `Object`<br/>pageRequest : `Pageable` (optional) | Search request based on criteria and pagination                                                                            |
 | findOne | `Optional<T>` | criteria : `Object`                                         | find one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria return more than one item              |
 | getOne  | `T`           | criteria : `Object`                                         | get one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no entity                      |
+| count   | long          | criteria : `Object`                                         | count number of entities based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no response          |
 | upsert  | `T`           | value : `Object`                                            | post data, you may define the strategy (Insert / Update) by adding header annotation `Prefer: resolution=merge-duplicates` |
 | upsert  | `List<T>`     | value : `List<Object>`                                      | post data, you may define the strategy (Insert / Update) by adding header annotation `Prefer: resolution=merge-duplicates` |
 | update  | `List<T>`     | criteria : `Object`<br/>value: `Object`                     | Update entities found by criterias                                                                                         |

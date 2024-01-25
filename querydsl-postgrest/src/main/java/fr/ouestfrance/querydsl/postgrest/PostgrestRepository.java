@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.GET;
+import static fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter.POSTGREST_SELECT_COUNT;
+
 /**
  * Postgrest repository implementation
  *
@@ -69,7 +72,7 @@ public class PostgrestRepository<T> implements Repository<T> {
     @Override
     public Page<T> search(Object criteria, Pageable pageable) {
         List<Filter> queryParams = processorService.process(criteria);
-        Map<String, List<String>> headers = headerMap(Header.Method.GET);
+        Map<String, List<String>> headers = headerMap(GET);
         // Add pageable if present
         if (pageable.getPageSize() > 0) {
             headers.put("Range-Unit", List.of("items"));
@@ -94,10 +97,27 @@ public class PostgrestRepository<T> implements Repository<T> {
     }
 
     @Override
+    public int count() {
+        return count(null);
+    }
+
+    @Override
+    public int count(final Object criteria) {
+        final List<Filter> queryParams = processorService.process(criteria);
+        queryParams.add(SelectFilter.of(List.of(new SelectFilter.Attribute("", POSTGREST_SELECT_COUNT))));
+        return client.search(annotation.resource(), toMap(queryParams), headerMap(GET), Map.class)
+                .data()
+                .stream()
+                .findFirst()
+                .map(result -> result.get("count"))
+                .map(Integer.class::cast)
+                .orElseThrow(() -> new PostgrestRequestException(annotation.resource(), "Count must return one result, but found 0"));
+    }
+
+    @Override
     public List<T> upsert(List<Object> values) {
         return client.post(annotation.resource(), values, headerMap(Header.Method.UPSERT), clazz);
     }
-
 
     @Override
     public List<T> patch(Object criteria, Object body) {
@@ -106,7 +126,6 @@ public class PostgrestRepository<T> implements Repository<T> {
         getSelects(criteria).ifPresent(queryParams::add);
         return client.patch(annotation.resource(), toMap(queryParams), body, headerMap(Header.Method.UPSERT), clazz);
     }
-
 
     @Override
     public List<T> delete(Object criteria) {
@@ -124,10 +143,11 @@ public class PostgrestRepository<T> implements Repository<T> {
      */
     private Map<String, List<String>> toMap(List<Filter> filters) {
         Map<String, List<String>> map = new LinkedHashMap<>();
-        filters.forEach(x -> map.computeIfAbsent(x.getKey(), key -> new ArrayList<>()).add(x.getFilterString()));
+        filters.forEach(x ->
+                map.computeIfAbsent(x.getKey(), key -> new ArrayList<>())
+                        .add(x.getFilterString()));
         return map;
     }
-
 
     /**
      * Extract selection on criteria and class

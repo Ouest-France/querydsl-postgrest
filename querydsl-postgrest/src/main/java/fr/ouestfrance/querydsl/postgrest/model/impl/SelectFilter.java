@@ -17,9 +17,15 @@ import java.util.List;
 public class SelectFilter implements Filter, FilterVisitor {
 
     /**
+     * the only value usable for count
+     */
+    public static final String POSTGREST_SELECT_COUNT = "count()";
+
+    /**
      * Default query param key for selection
      */
     private static final String KEY_PARAMETER = "select";
+
     /**
      * alias
      */

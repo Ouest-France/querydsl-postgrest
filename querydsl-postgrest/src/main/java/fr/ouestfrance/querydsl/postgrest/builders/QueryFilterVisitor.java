@@ -10,6 +10,8 @@ import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter.POSTGREST_SELECT_COUNT;
+
 /**
  * QueryVisitor to allow building queries
  */
@@ -57,9 +59,14 @@ public final class QueryFilterVisitor {
      * @param filter select filter
      */
     public void visit(SelectFilter filter) {
-        builder.append("*,");
-        builder.append(filter.getSelectAttributes().stream().map(
-                        x -> x.getAlias().isEmpty() ? x.getValue() : x.getAlias() + ":" + x.getValue())
+        if (filter.getSelectAttributes()
+                .stream()
+                .map(SelectFilter.Attribute::getValue)
+                .noneMatch(attributeValue -> attributeValue.equals(POSTGREST_SELECT_COUNT))) {
+            builder.append("*,");
+        }
+        builder.append(filter.getSelectAttributes().stream()
+                .map(x -> x.getAlias().isEmpty() ? x.getValue() : x.getAlias() + ":" + x.getValue())
                 .collect(Collectors.joining(",")));
     }
 
