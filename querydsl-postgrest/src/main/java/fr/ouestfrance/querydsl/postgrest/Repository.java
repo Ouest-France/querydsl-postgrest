@@ -24,6 +24,15 @@ public interface Repository<T> {
         return search(criteria, Pageable.unPaged());
     }
 
+
+    /**
+     * Count from criteria object
+     *
+     * @param criteria search criteria
+     * @return count result
+     */
+    long count(Object criteria);
+
     /**
      * Search from criteria object with pagination
      *

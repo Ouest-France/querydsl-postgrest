@@ -3,12 +3,10 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.model.Filter;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
+import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
@@ -83,6 +81,17 @@ public class PostgrestRepository<T> implements Repository<T> {
         // Retrieve result headers
         return response;
     }
+
+
+    @Override
+    public long count(Object criteria) {
+        List<Filter> queryParams = processorService.process(criteria);
+        queryParams.add(CountFilter.of());
+        List<CountItem> response = client.count(annotation.resource(), toMap(queryParams));
+        // Retrieve result headers
+        return response.stream().findFirst().map(x -> x.get("count")).map(Long::valueOf).orElse(0L);
+    }
+
 
     @Override
     public List<T> upsert(List<Object> values) {

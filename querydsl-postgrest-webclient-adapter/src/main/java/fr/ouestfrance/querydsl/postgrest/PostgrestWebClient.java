@@ -1,5 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
@@ -71,6 +72,19 @@ public class PostgrestWebClient implements PostgrestClient {
                     }
                     return (Page<T>) page;
                 }).orElse(Page.empty());
+    }
+
+    @Override
+    public List<CountItem> count(String resource, Map<String, List<String>> params) {
+        ResponseEntity<List<CountItem>> response = webClient.get().uri(uriBuilder -> {
+                    uriBuilder.path(resource);
+                    uriBuilder.queryParams(toMultiMap(params));
+                    return uriBuilder.build();
+                })
+                .retrieve()
+                .toEntity(listRef(CountItem.class))
+                .block();
+        return Optional.ofNullable(response).map(HttpEntity::getBody).orElse(List.of());
     }
 
     private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
