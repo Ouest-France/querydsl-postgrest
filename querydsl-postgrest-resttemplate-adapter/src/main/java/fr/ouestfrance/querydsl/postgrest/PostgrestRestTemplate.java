@@ -1,8 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
+import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.reflect.TypeUtils;
@@ -20,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Rest interface for querying postgrest
@@ -36,15 +36,15 @@ public class PostgrestRestTemplate implements PostgrestClient {
      * Postgrest restTemplate adapter
      *
      * @param restTemplate restTemplate
-     * @return PostgrestResttemplate implementation
+     * @return PostgrestRestTemplate implementation
      */
     public static PostgrestRestTemplate of(RestTemplate restTemplate) {
         return new PostgrestRestTemplate(restTemplate);
     }
 
     @Override
-    public <T> Page<T> search(String resource, Map<String, List<String>> params,
-                              Map<String, List<String>> headers, Class<T> clazz) {
+    public <T> RangeResponse<T> search(String resource, Map<String, List<String>> params,
+                                       Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = restTemplate.exchange(restTemplate.getUriTemplateHandler()
                         .expand(UriComponentsBuilder.fromPath(resource)
                                 .queryParams(toMultiMap(params)).build().toString(), new HashMap<>()), HttpMethod.GET,
@@ -53,14 +53,14 @@ public class PostgrestRestTemplate implements PostgrestClient {
         return Optional.of(response)
                 .map(HttpEntity::getBody)
                 .map(x -> {
-                    PageImpl<T> page = new PageImpl<>(x, null, x.size(), 1);
-                    List<String> contentRangeHeaders = response.getHeaders().get("Content-Range");
-                    if (contentRangeHeaders != null) {
-                        Range range = Range.of(contentRangeHeaders.stream().findFirst().toString());
-                        page.withRange(range);
-                    }
-                    return (Page<T>) page;
-                }).orElse(Page.empty());
+                    Range range = Optional.ofNullable(response.getHeaders().get("Content-Range"))
+                            .map(List::stream)
+                            .map(Stream::findFirst)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .map(Range::of).orElse(null);
+                    return new RangeResponse<>(x, range);
+                }).orElse(new RangeResponse<>(List.of(), null));
     }
 
     @Override
@@ -73,8 +73,8 @@ public class PostgrestRestTemplate implements PostgrestClient {
     public <T> List<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
         MultiValueMap<String, String> queryParams = toMultiMap(params);
         return restTemplate.exchange(restTemplate.getUriTemplateHandler()
-                .expand(UriComponentsBuilder.fromPath(resource).queryParams(queryParams).build().toString(), new HashMap<>()),
-                HttpMethod.PATCH, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz))
+                                .expand(UriComponentsBuilder.fromPath(resource).queryParams(queryParams).build().toString(), new HashMap<>()),
+                        HttpMethod.PATCH, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz))
                 .getBody();
     }
 

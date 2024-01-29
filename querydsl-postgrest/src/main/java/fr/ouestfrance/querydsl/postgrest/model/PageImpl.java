@@ -21,7 +21,6 @@ public class PageImpl<T> implements Page<T> {
     /**
      * Request information
      */
-    @Setter
     private Pageable pageable;
     /**
      * Total elements
@@ -31,15 +30,4 @@ public class PageImpl<T> implements Page<T> {
      * Total pages
      */
     private int totalPages;
-
-    /**
-     * Apply range to a specific Page
-     * @param range range to apply
-     */
-    public void withRange(Range range) {
-        totalElements = range.getTotalElements();
-        if (totalElements > 0) {
-            totalPages = (int) (totalElements / (range.getLimit() - range.getOffset()));
-        }
-    }
 }

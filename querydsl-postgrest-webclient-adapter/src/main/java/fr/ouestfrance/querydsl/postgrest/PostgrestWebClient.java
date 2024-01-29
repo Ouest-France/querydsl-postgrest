@@ -3,6 +3,7 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
+import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.reflect.TypeUtils;
@@ -18,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Rest interface for querying postgrest
@@ -47,8 +49,8 @@ public class PostgrestWebClient implements PostgrestClient {
     }
 
     @Override
-    public <T> Page<T> search(String resource, Map<String, List<String>> params,
-                              Map<String, List<String>> headers, Class<T> clazz) {
+    public <T> RangeResponse<T> search(String resource, Map<String, List<String>> params,
+                                       Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = webClient.get().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     uriBuilder.queryParams(toMultiMap(params));
@@ -63,14 +65,14 @@ public class PostgrestWebClient implements PostgrestClient {
         return Optional.ofNullable(response)
                 .map(HttpEntity::getBody)
                 .map(x -> {
-                    PageImpl<T> page = new PageImpl<>(x, null, x.size(), 1);
-                    List<String> contentRangeHeaders = response.getHeaders().get("Content-Range");
-                    if (contentRangeHeaders != null && !contentRangeHeaders.isEmpty()) {
-                        Range range = Range.of(contentRangeHeaders.stream().findFirst().toString());
-                        page.withRange(range);
-                    }
-                    return (Page<T>) page;
-                }).orElse(Page.empty());
+                    Range range = Optional.ofNullable(response.getHeaders().get("Content-Range"))
+                            .map(List::stream)
+                            .map(Stream::findFirst)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .map(Range::of).orElse(null);
+                    return new RangeResponse<>(x, range);
+                }).orElse(new RangeResponse<>(List.of(), null));
     }
 
     private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {

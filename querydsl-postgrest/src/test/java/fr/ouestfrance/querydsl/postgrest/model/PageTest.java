@@ -18,17 +18,7 @@ class PageTest {
         assertNotNull(map);
         assertTrue(map.stream().anyMatch(Objects::nonNull));
     }
-
-    @Test
-    void withRange() {
-        List<Integer> items = List.of(1, 2, 3);
-        PageImpl<Integer> page = new PageImpl<>(items, null, items.size(), 1);
-        page.withRange(Range.of("0-3/3"));
-        assertNotNull(page);
-        assertEquals(3, page.getTotalElements());
-        assertEquals(1, page.getTotalPages());
-    }
-
+    
     @Test
     void shouldEmptyPage() {
         Page<Integer> page = Page.empty();
