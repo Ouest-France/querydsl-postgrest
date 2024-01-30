@@ -2,10 +2,7 @@ package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.app.*;
 import fr.ouestfrance.querydsl.postgrest.criterias.Criteria;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
-import fr.ouestfrance.querydsl.postgrest.model.Sort;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.utils.QueryStringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +37,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldSearchAllPosts() {
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
         Page<Post> search = repository.search(null);
         assertNotNull(search);
         assertNotNull(search.iterator());
@@ -60,7 +57,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setValidDate(LocalDate.of(2023, 11, 10));
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10, Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title").nullsFirst(), Sort.Order.asc("author").nullsLast())));
         assertNotNull(search);
@@ -94,7 +91,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
     @Test
     void shouldFindById() {
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post()));
         Page<Post> search = repository.search(Criteria.byId("1"), Pageable.ofSize(6));
         // Assert query captors
         Map<String, List<String>> queries = queryArgs.getValue();
@@ -108,7 +105,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
     @Test
     void shouldFindByIds() {
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post()));
         Page<Post> search = repository.search(Criteria.byIds("1", "2", "3"), Pageable.ofSize(6));
         // Assert query captors
         Map<String, List<String>> queries = queryArgs.getValue();
@@ -128,7 +125,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setCodes(List.of("a", "b", "c"));
         request.setExcludes(List.of("z"));
         request.setValidDate(LocalDate.of(2023, 11, 10));
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(new PageImpl<>(List.of(new Post()), null, 2, 2));
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(new RangeResponse<>(List.of(new Post()),new Range(0,1,2)));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(1, Sort.by(Sort.Order.asc("id"))));
         assertNotNull(search);
@@ -159,7 +156,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setValidDate(LocalDate.of(2023, 11, 10));
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new PageImpl<>(List.of(new Post()), null, 2, 2));
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new RangeResponse<>(List.of(new Post()),  new Range(0,2, 2)));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(1, 1, Sort.by(Sort.Order.asc("id"))));
         assertNotNull(search);
@@ -182,7 +179,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         PostRequest request = new PostRequest();
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
@@ -199,13 +196,13 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldRaiseExceptionOnMultipleOne() {
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
         assertThrows(PostgrestRequestException.class, () -> repository.findOne(null));
     }
 
     @Test
     void shouldFindOne() {
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(Page.of(new Post()));
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post()));
         Optional<Post> one = repository.findOne(null);
         assertNotNull(one);
         assertTrue(one.isPresent());
@@ -214,7 +211,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldFindEmptyOne() {
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(Page.of());
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of());
         Optional<Post> one = repository.findOne(null);
         assertNotNull(one);
         assertTrue(one.isEmpty());
@@ -223,14 +220,14 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldGetOne() {
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(Page.of(new Post()));
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post()));
         Post one = repository.getOne(null);
         assertNotNull(one);
     }
 
     @Test
     void shouldRaiseExceptionOnEmptyGetOne() {
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(Page.of());
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of());
         assertThrows(PostgrestRequestException.class, () -> repository.getOne(null));
     }
 
@@ -239,7 +236,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         PostRequestWithSize request = new PostRequestWithSize();
         request.setSize("25");
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
         Page<Post> search = repository.search(request, Pageable.unPaged());
         assertNotNull(search);
         assertEquals(2, search.size());
@@ -259,7 +256,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setAuthor("IA");
         request.setSubject("IA");
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);
@@ -282,7 +279,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setPortee("['DEPARTEMENT']");
         request.setDateValide(LocalDate.of(2023, 12, 4));
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(Page.of(new Post(), new Post()));
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(10));
         assertNotNull(search);

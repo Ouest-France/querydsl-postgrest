@@ -1,6 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import fr.ouestfrance.querydsl.postgrest.model.Page;
+import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -20,8 +20,8 @@ public interface PostgrestClient {
      * @return ResponseEntity containing the results
      */
 
-    <T> Page<T> search(String resource, Map<String, List<String>> params,
-                       Map<String, List<String>> headers, Class<T> clazz);
+    <T> RangeResponse<T> search(String resource, Map<String, List<String>> params,
+                                Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Save body

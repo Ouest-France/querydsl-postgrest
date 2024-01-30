@@ -3,10 +3,7 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.model.Filter;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
@@ -76,12 +73,14 @@ public class PostgrestRepository<T> implements Repository<T> {
         }
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        Page<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
-        if (response instanceof PageImpl<T> page) {
-            page.setPageable(pageable);
-        }
-        // Retrieve result headers
-        return response;
+        RangeResponse<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
+
+        int pageSize = Optional.of(pageable)
+                .filter(Pageable::hasSize)
+                .map(Pageable::getPageSize)
+                .orElse(response.getPageSize());
+        // Compute PageResponse
+        return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
     }
 
     @Override
