@@ -1,5 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.BulkOptions;
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
@@ -68,7 +70,12 @@ public interface Repository<T> {
      * @param value values to upsert
      * @return values inserted or updated
      */
-    List<T> upsert(List<Object> value);
+    default BulkResponse<T> upsert(List<Object> value) {
+        return upsert(value, new BulkOptions());
+    }
+
+    BulkResponse<T> upsert(List<Object> value, BulkOptions options);
+
 
     /**
      * Update multiple body
@@ -77,7 +84,11 @@ public interface Repository<T> {
      * @param body     to update
      * @return list of patched object
      */
-    List<T> patch(Object criteria, Object body);
+    default BulkResponse<T> patch(Object criteria, Object body) {
+        return patch(criteria, body, new BulkOptions());
+    }
+
+    BulkResponse<T> patch(Object criteria, Object body, BulkOptions options);
 
 
     /**
@@ -86,6 +97,10 @@ public interface Repository<T> {
      * @param criteria criteria to create deletion query
      * @return list of deleted items
      */
-    List<T> delete(Object criteria);
+    default BulkResponse<T> delete(Object criteria) {
+        return delete(criteria, new BulkOptions());
+    }
+
+    BulkResponse<T> delete(Object criteria, BulkOptions options);
 
 }

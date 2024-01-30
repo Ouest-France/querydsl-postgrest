@@ -1,5 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
@@ -81,21 +82,25 @@ public class PostgrestWebClient implements PostgrestClient {
     }
 
     @Override
-    public <T> List<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
-        return webClient.post().uri(uriBuilder -> {
+    public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+        ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     return uriBuilder.build();
                 }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .bodyValue(value)
                 .retrieve()
-                .bodyToMono(listRef(clazz))
+                .toEntity(listRef(clazz))
                 .block();
+
+        return Optional.ofNullable(response)
+                .map(x->new BulkResponse<>(x.getBody(), getCount(x.getHeaders()).map(Range::getCount).orElse(0L)))
+                .orElse(new BulkResponse<>(List.of(), 0L));
     }
 
 
     @Override
-    public <T> List<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
-        return webClient.patch().uri(uriBuilder -> {
+    public <T> BulkResponse<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
+        ResponseEntity<List<T>> response = webClient.patch().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
@@ -103,18 +108,26 @@ public class PostgrestWebClient implements PostgrestClient {
                 .bodyValue(value)
                 .headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
-                .bodyToMono(listRef(clazz)).block();
+                .toEntity(listRef(clazz)).block();
+
+        return Optional.ofNullable(response)
+                .map(x->new BulkResponse<>(x.getBody(), getCount(x.getHeaders()).map(Range::getCount).orElse(0L)))
+                .orElse(new BulkResponse<>(List.of(), 0L));
     }
 
     @Override
-    public <T> List<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz) {
-        return webClient.delete().uri(uriBuilder -> {
+    public <T> BulkResponse<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz) {
+        ResponseEntity<List<T>> response = webClient.delete().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
                 }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
-                .bodyToMono(listRef(clazz)).block();
+                .toEntity(listRef(clazz)).block();
+
+        return Optional.ofNullable(response)
+                .map(x->new BulkResponse<>(x.getBody(), getCount(x.getHeaders()).map(Range::getCount).orElse(0L)))
+                .orElse(new BulkResponse<>(List.of(), 0L));
     }
 
     private static <T> ParameterizedTypeReference<List<T>> listRef(Class<T> clazz) {
@@ -123,6 +136,12 @@ public class PostgrestWebClient implements PostgrestClient {
 
     private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {
         return new LinkedMultiValueMap<>(params);
+    }
+
+    private static Optional<Range> getCount(HttpHeaders response) {
+        return Optional.ofNullable(response.get("Content-Range"))
+                .flatMap(x -> x.stream().findFirst())
+                .map(Range::of);
     }
 
 }

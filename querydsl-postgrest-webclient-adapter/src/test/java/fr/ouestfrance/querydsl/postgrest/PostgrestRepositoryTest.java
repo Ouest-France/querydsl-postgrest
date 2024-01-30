@@ -4,13 +4,13 @@ import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequest;
 import fr.ouestfrance.querydsl.postgrest.criterias.Criteria;
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
@@ -23,9 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 @MockServerSettings(ports = 8007)
-class PostrgrestRepositoryTest {
+@Slf4j
+class PostgrestRepositoryTest {
 
     private final PostgrestRepository<Post> repository = new PostRepository(PostgrestWebClient.of(WebClient.builder()
             .baseUrl("http://localhost:8007/")
@@ -34,7 +37,7 @@ class PostrgrestRepositoryTest {
 
     @Test
     void shouldSearchPosts(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("select", "*,authors(*)"))
+        client.when(request().withPath("/posts").withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
         Page<Post> search = repository.search(new PostRequest(), Pageable.ofSize(6));
         System.out.println(search.getTotalElements());
@@ -48,7 +51,7 @@ class PostrgrestRepositoryTest {
 
     @Test
     void shouldFindById(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts")
+        client.when(request().withPath("/posts")
                         .withQueryStringParameter("id", "eq.1")
                         .withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
@@ -64,7 +67,7 @@ class PostrgrestRepositoryTest {
 
     @Test
     void shouldSearchGetByIds(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts")
+        client.when(request().withPath("/posts")
                         .withQueryStringParameter("id", "in.(1,2,3)")
                         .withQueryStringParameter("select", "*,authors(*)"))
                 .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
@@ -80,7 +83,17 @@ class PostrgrestRepositoryTest {
 
     @Test
     void shouldUpsertPost(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts"))
+        client.when(request().withPath("/posts"))
+                .respond(jsonFileResponse("new_posts.json"));
+        List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
+        assertNotNull(result);
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+
+    }
+
+    @Test
+    void shouldUpsertBulkPost(ClientAndServer client) {
+        client.when(request().withPath("/posts"))
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
         assertNotNull(result);
@@ -91,18 +104,32 @@ class PostrgrestRepositoryTest {
 
     @Test
     void shouldPatchPost(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
-                .respond(jsonFileResponse("posts.json"));
+        client.when(request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
+                .respond(response().withHeader("Content-Range", "0-299/300"));
         PostRequest criteria = new PostRequest();
         criteria.setUserId(25);
-        List<Post> result = repository.patch(criteria, new Post());
+        BulkResponse<Post> result = repository.patch(criteria, new Post());
         assertNotNull(result);
-        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+        assertEquals(300, result.getCount());
+        assertTrue(result.isEmpty());
     }
 
     @Test
+    void shouldPatchBulkPost(ClientAndServer client) {
+        client.when(request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
+                .respond(response().withHeader("Content-Range", "0-299/300"));
+        PostRequest criteria = new PostRequest();
+        criteria.setUserId(25);
+        BulkResponse<Post> result = repository.patch(criteria, new Post());
+        assertNotNull(result);
+        assertEquals(300, result.getCount());
+        assertTrue(result.isEmpty());
+    }
+
+
+    @Test
     void shouldDeletePost(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
+        client.when(request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
                 .respond(jsonFileResponse("posts.json"));
         PostRequest criteria = new PostRequest();
         criteria.setUserId(25);
@@ -111,8 +138,21 @@ class PostrgrestRepositoryTest {
         result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
     }
 
+
+    @Test
+    void shouldDeleteBulkPost(ClientAndServer client) {
+        client.when(request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
+                .respond(response().withHeader("Content-Range", "0-299/300"));
+        PostRequest criteria = new PostRequest();
+        criteria.setUserId(25);
+        BulkResponse<Post> result = repository.delete(criteria);
+        assertNotNull(result);
+        assertEquals(300, result.getCount());
+        assertTrue(result.isEmpty());
+    }
+
     private HttpResponse jsonFileResponse(String resourceFileName) {
-        return HttpResponse.response().withContentType(MediaType.APPLICATION_JSON)
+        return response().withContentType(MediaType.APPLICATION_JSON)
                 .withBody(jsonOf(resourceFileName));
     }
 

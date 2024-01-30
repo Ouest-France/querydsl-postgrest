@@ -1,5 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 
 import java.util.List;
@@ -33,7 +34,7 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of inserted objects
      */
-    <T> List<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz);
+    <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Patch data
@@ -46,7 +47,7 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of patched objects
      */
-    <T> List<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz);
+    <T> BulkResponse<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Delete data
@@ -58,6 +59,6 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of deleted objects
      */
-    <T> List<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz);
+    <T> BulkResponse<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz);
 
 }

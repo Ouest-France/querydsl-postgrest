@@ -2,6 +2,7 @@ package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,13 +24,13 @@ import static org.mockito.Mockito.when;
 class PostgrestRepositoryUpsertMockTest extends AbstractRepositoryMockTest {
 
     @Mock
-    private PostgrestClient webClient;
+    private PostgrestClient client;
 
     private PostgrestRepository<Post> repository;
 
     @BeforeEach
     void beforeEach() {
-        repository = new PostRepository(webClient);
+        repository = new PostRepository(client);
     }
 
     @Test
@@ -43,12 +44,12 @@ class PostgrestRepositoryUpsertMockTest extends AbstractRepositoryMockTest {
         save.setTitle("title");
         save.setBody("test");
 
-        when(webClient.post(anyString(), postCaptor.capture(), headerCaptor.capture(), eq(Post.class))).thenAnswer(x -> {
+        when(client.post(anyString(), postCaptor.capture(), headerCaptor.capture(), eq(Post.class))).thenAnswer(x -> {
             Post post = new Post();
             post.setId(generateId);
             post.setTitle(save.getTitle());
             post.setBody(save.getBody());
-            return List.of(post);
+            return BulkResponse.of(post);
         });
         Post saved = repository.upsert(save);
         assertNotNull(saved);

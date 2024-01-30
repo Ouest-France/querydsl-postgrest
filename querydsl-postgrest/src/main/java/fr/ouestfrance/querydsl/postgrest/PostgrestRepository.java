@@ -3,10 +3,7 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.model.Filter;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
@@ -16,6 +13,8 @@ import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+
+import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
 
 /**
  * Postgrest repository implementation
@@ -85,26 +84,40 @@ public class PostgrestRepository<T> implements Repository<T> {
     }
 
     @Override
-    public List<T> upsert(List<Object> values) {
-        return client.post(annotation.resource(), values, headerMap(Header.Method.UPSERT), clazz);
+    public BulkResponse<T> upsert(List<Object> values) {
+        return client.post(annotation.resource(), values, headerMap(UPSERT), clazz);
     }
 
 
     @Override
-    public List<T> patch(Object criteria, Object body) {
-        List<Filter> queryParams = processorService.process(criteria);
-        // Add select criteria
-        getSelects(criteria).ifPresent(queryParams::add);
-        return client.patch(annotation.resource(), toMap(queryParams), body, headerMap(Header.Method.UPSERT), clazz);
+    public BulkResponse<T> upsert(List<Object> values, BulkOptions options) {
+        Map<String, List<String>> headers = options.countOnly ? bulkMap(UPSERT) : headerMap(UPSERT);
+        // Add return representation headers only
+        return client.post(annotation.resource(), values, headers, clazz);
     }
 
 
     @Override
-    public List<T> delete(Object criteria) {
+    public BulkResponse<T> patch(Object criteria, Object body, BulkOptions options) {
         List<Filter> queryParams = processorService.process(criteria);
-        // Add select criteria
-        getSelects(criteria).ifPresent(queryParams::add);
-        return client.delete(annotation.resource(), toMap(queryParams), headerMap(Header.Method.DELETE), clazz);
+        Map<String, List<String>> headers = options.countOnly ? bulkMap(PATCH) : headerMap(PATCH);
+        if (!options.isCountOnly()) {
+            // Add select criteria
+            getSelects(criteria).ifPresent(queryParams::add);
+        }
+        return client.patch(annotation.resource(), toMap(queryParams), body, headers, clazz);
+    }
+
+
+    @Override
+    public BulkResponse<T> delete(Object criteria, BulkOptions options) {
+        List<Filter> queryParams = processorService.process(criteria);
+        Map<String, List<String>> headers = options.countOnly ? bulkMap(DELETE) : headerMap(DELETE);
+        if (!options.isCountOnly()) {
+            // Add select criteria
+            getSelects(criteria).ifPresent(queryParams::add);
+        }
+        return client.delete(annotation.resource(), toMap(queryParams), headers, clazz);
     }
 
     /**
@@ -182,6 +195,15 @@ public class PostgrestRepository<T> implements Repository<T> {
         Map<String, List<String>> map = new LinkedHashMap<>();
         Optional.ofNullable(headersMap.get(method))
                 .ifPresent(map::putAll);
+        return map;
+    }
+
+    private Map<String, List<String>> bulkMap(Header.Method method) {
+        Map<String, List<String>> map = headerMap(method);
+        List<String> prefers = map.computeIfAbsent("Prefer", x -> new ArrayList<>());
+        prefers.add("count=" + PostgrestConfiguration.CountType.EXACT.name().toLowerCase());
+        prefers.stream().filter(x -> x.startsWith("return=")).findFirst().ifPresent(prefers::remove);
+        prefers.add("return=headers-only");
         return map;
     }
 }
