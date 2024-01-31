@@ -7,6 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Bulk Executor service allow to execute on a wide range of data
+ * Options allow you to specify bulk parameters :
+ * - countOnly : Do not get object representation
+ * - pageSize: Specify chunk size, allow to iterate on postgrest and avoid timeout exceptions
+ */
 public class BulkExecutorService {
 
     public <T> BulkResponse<T> execute(Function<BulkRequest, BulkResponse<T>> function, BulkRequest request, BulkOptions options) {

@@ -69,7 +69,7 @@ public class PostgrestRepository<T> implements Repository<T> {
             headers.put("Range-Unit", List.of("items"));
             headers.put("Range", List.of(pageable.toRange()));
         }
-        headers.computeIfAbsent("Prefers", x -> new ArrayList<>())
+        headers.computeIfAbsent(Prefer.HEADER, x -> new ArrayList<>())
                 .add("count=" + annotation.countStrategy().name().toLowerCase());
         // Add sort if present
         if (pageable.getSort() != null) {
@@ -77,18 +77,21 @@ public class PostgrestRepository<T> implements Repository<T> {
         }
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        Page<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
-        if (response instanceof PageImpl<T> page) {
-            page.setPageable(pageable);
-        }
-        // Retrieve result headers
-        return response;
+        RangeResponse<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
+
+        int pageSize = Optional.of(pageable)
+                .filter(Pageable::hasSize)
+                .map(Pageable::getPageSize)
+                .orElse(response.getPageSize());
+        // Compute PageResponse
+        return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
     }
 
     @Override
     public BulkResponse<T> upsert(List<Object> values) {
         return client.post(annotation.resource(), values, headerMap(UPSERT), clazz);
     }
+
 
     @Override
     public BulkResponse<T> upsert(List<Object> values, BulkOptions options) {
@@ -167,13 +170,13 @@ public class PostgrestRepository<T> implements Repository<T> {
 
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        Page<T> search = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
+        RangeResponse<T> search = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
 
         if (search.getTotalElements() > 1) {
             throw new PostgrestRequestException(annotation.resource(),
                     "Search with params " + criteria + " must found only one result, but found " + search.getTotalElements() + " results");
         }
-        return search.stream().findFirst();
+        return search.data().stream().findFirst();
     }
 
     /**

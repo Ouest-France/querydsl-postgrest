@@ -1,6 +1,8 @@
 package fr.ouestfrance.querydsl.postgrest.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,6 +11,8 @@ import java.util.regex.Pattern;
  * Range object
  */
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Range {
 
     /**
