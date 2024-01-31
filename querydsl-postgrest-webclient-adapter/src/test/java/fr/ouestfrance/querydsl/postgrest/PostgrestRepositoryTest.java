@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerSettings;
-import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -110,7 +109,7 @@ class PostgrestRepositoryTest {
         criteria.setUserId(25);
         BulkResponse<Post> result = repository.patch(criteria, new Post());
         assertNotNull(result);
-        assertEquals(300, result.getCount());
+        assertEquals(300, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
 
@@ -122,7 +121,7 @@ class PostgrestRepositoryTest {
         criteria.setUserId(25);
         BulkResponse<Post> result = repository.patch(criteria, new Post());
         assertNotNull(result);
-        assertEquals(300, result.getCount());
+        assertEquals(300, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
 
@@ -147,7 +146,7 @@ class PostgrestRepositoryTest {
         criteria.setUserId(25);
         BulkResponse<Post> result = repository.delete(criteria);
         assertNotNull(result);
-        assertEquals(300, result.getCount());
+        assertEquals(300, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
 

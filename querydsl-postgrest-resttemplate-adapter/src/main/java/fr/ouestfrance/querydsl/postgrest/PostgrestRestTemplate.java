@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static fr.ouestfrance.querydsl.postgrest.ParametrizedTypeUtils.listRef;
+import static fr.ouestfrance.querydsl.postgrest.ResponseUtils.toBulkResponse;
+
 /**
  * Rest interface for querying postgrest
  */
@@ -66,32 +69,26 @@ public class PostgrestRestTemplate implements PostgrestClient {
 
     @Override
     public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
-        HttpHeaders httpHeaders = toHeaders(headers);
-        ResponseEntity<List<T>> response = restTemplate.exchange(resource, HttpMethod.POST, new HttpEntity<>(value, httpHeaders), listRef(clazz));
-        return new BulkResponse<>(response.getBody(), getCount(response.getHeaders()).map(Range::getCount).orElse(0L));
+        ResponseEntity<List<T>> response = restTemplate.exchange(resource, HttpMethod.POST, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
+        return toBulkResponse(response);
     }
 
 
     @Override
     public <T> BulkResponse<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
-        MultiValueMap<String, String> queryParams = toMultiMap(params);
         ResponseEntity<List<T>> response = restTemplate.exchange(restTemplate.getUriTemplateHandler()
-                        .expand(UriComponentsBuilder.fromPath(resource).queryParams(queryParams).build().toString(), new HashMap<>()),
+                        .expand(UriComponentsBuilder.fromPath(resource).queryParams(toMultiMap(params)).build().toString(), new HashMap<>()),
                 HttpMethod.PATCH, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
-        return new BulkResponse<>(response.getBody(), getCount(response.getHeaders()).map(Range::getCount).orElse(0L));
+        return toBulkResponse(response);
     }
 
     @Override
     public <T> BulkResponse<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz) {
-        MultiValueMap<String, String> queryParams = toMultiMap(params);
         ResponseEntity<List<T>> response = restTemplate.exchange(restTemplate.getUriTemplateHandler().expand(UriComponentsBuilder.fromPath(resource)
-                .queryParams(queryParams).build().toString(), new HashMap<>()), HttpMethod.DELETE, new HttpEntity<>(null, toHeaders(headers)), listRef(clazz));
-        return new BulkResponse<>(response.getBody(), getCount(response.getHeaders()).map(Range::getCount).orElse(0L));
+                .queryParams(toMultiMap(params)).build().toString(), new HashMap<>()), HttpMethod.DELETE, new HttpEntity<>(null, toHeaders(headers)), listRef(clazz));
+        return toBulkResponse(response);
     }
 
-    private static <T> ParameterizedTypeReference<List<T>> listRef(Class<T> clazz) {
-        return ParameterizedTypeReference.forType(TypeUtils.parameterize(List.class, clazz));
-    }
 
     private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {
         return new LinkedMultiValueMap<>(params);
@@ -101,10 +98,4 @@ public class PostgrestRestTemplate implements PostgrestClient {
         return new HttpHeaders(toMultiMap(headers));
     }
 
-
-    private static Optional<Range> getCount(HttpHeaders response) {
-        return Optional.ofNullable(response.get("Content-Range"))
-                .flatMap(x -> x.stream().findFirst())
-                .map(Range::of);
-    }
 }

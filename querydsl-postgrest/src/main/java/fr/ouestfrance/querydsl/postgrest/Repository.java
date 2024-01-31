@@ -74,6 +74,13 @@ public interface Repository<T> {
         return upsert(value, new BulkOptions());
     }
 
+    /**
+     * Upsert multiple values with bulkMode
+     *
+     * @param value   values to upserts
+     * @param options bulk options
+     * @return bulk response
+     */
     BulkResponse<T> upsert(List<Object> value, BulkOptions options);
 
 
@@ -88,6 +95,14 @@ public interface Repository<T> {
         return patch(criteria, body, new BulkOptions());
     }
 
+    /**
+     * Update multiple body
+     *
+     * @param criteria criteria data
+     * @param body     to update
+     * @param options  bulk options
+     * @return list of patched object
+     */
     BulkResponse<T> patch(Object criteria, Object body, BulkOptions options);
 
 
@@ -101,6 +116,13 @@ public interface Repository<T> {
         return delete(criteria, new BulkOptions());
     }
 
+    /**
+     * Delete items using criteria
+     *
+     * @param criteria criteria to create deletion query
+     * @param options  bulk options
+     * @return list of deleted items
+     */
     BulkResponse<T> delete(Object criteria, BulkOptions options);
 
 }

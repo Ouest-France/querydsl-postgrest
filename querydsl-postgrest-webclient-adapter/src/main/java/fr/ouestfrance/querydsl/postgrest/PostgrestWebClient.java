@@ -6,8 +6,6 @@ import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.reflect.TypeUtils;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,6 +17,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static fr.ouestfrance.querydsl.postgrest.ResponseUtils.toBulkResponse;
+import static fr.ouestfrance.querydsl.postgrest.ParametrizedTypeUtils.*;
 
 /**
  * Rest interface for querying postgrest
@@ -43,8 +44,7 @@ public class PostgrestWebClient implements PostgrestClient {
      * @return PostgrestWebClient implementation
      */
     public static PostgrestWebClient of(WebClient webClient) {
-        return
-                new PostgrestWebClient(webClient);
+        return new PostgrestWebClient(webClient);
     }
 
     @Override
@@ -74,13 +74,6 @@ public class PostgrestWebClient implements PostgrestClient {
                 }).orElse(Page.empty());
     }
 
-    private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
-        Optional.ofNullable(headers)
-                .map(PostgrestWebClient::toMultiMap).ifPresent(httpHeaders::addAll);
-        // Add contentType with default on call if webclient default is not set
-        httpHeaders.put(CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON_VALUE));
-    }
-
     @Override
     public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> {
@@ -91,10 +84,7 @@ public class PostgrestWebClient implements PostgrestClient {
                 .retrieve()
                 .toEntity(listRef(clazz))
                 .block();
-
-        return Optional.ofNullable(response)
-                .map(x->new BulkResponse<>(x.getBody(), getCount(x.getHeaders()).map(Range::getCount).orElse(0L)))
-                .orElse(new BulkResponse<>(List.of(), 0L));
+        return toBulkResponse(response);
     }
 
 
@@ -109,10 +99,7 @@ public class PostgrestWebClient implements PostgrestClient {
                 .headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
                 .toEntity(listRef(clazz)).block();
-
-        return Optional.ofNullable(response)
-                .map(x->new BulkResponse<>(x.getBody(), getCount(x.getHeaders()).map(Range::getCount).orElse(0L)))
-                .orElse(new BulkResponse<>(List.of(), 0L));
+        return toBulkResponse(response);
     }
 
     @Override
@@ -124,24 +111,19 @@ public class PostgrestWebClient implements PostgrestClient {
                 }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
                 .toEntity(listRef(clazz)).block();
-
-        return Optional.ofNullable(response)
-                .map(x->new BulkResponse<>(x.getBody(), getCount(x.getHeaders()).map(Range::getCount).orElse(0L)))
-                .orElse(new BulkResponse<>(List.of(), 0L));
+        return toBulkResponse(response);
     }
 
-    private static <T> ParameterizedTypeReference<List<T>> listRef(Class<T> clazz) {
-        return ParameterizedTypeReference.forType(TypeUtils.parameterize(List.class, clazz));
-    }
+
 
     private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {
         return new LinkedMultiValueMap<>(params);
     }
 
-    private static Optional<Range> getCount(HttpHeaders response) {
-        return Optional.ofNullable(response.get("Content-Range"))
-                .flatMap(x -> x.stream().findFirst())
-                .map(Range::of);
+    private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
+        Optional.ofNullable(headers)
+                .map(PostgrestWebClient::toMultiMap).ifPresent(httpHeaders::addAll);
+        // Add contentType with default on call if webclient default is not set
+        httpHeaders.put(CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON_VALUE));
     }
-
 }

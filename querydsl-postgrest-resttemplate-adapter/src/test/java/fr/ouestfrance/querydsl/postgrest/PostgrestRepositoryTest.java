@@ -109,7 +109,7 @@ class PostgrestRepositoryTest {
                 .respond(HttpResponse.response().withHeader("Content-Range", "0-299/300"));
         BulkResponse<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
         assertNotNull(result);
-        assertEquals(300L, result.getCount());
+        assertEquals(300L, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
 
@@ -133,7 +133,7 @@ class PostgrestRepositoryTest {
         criteria.setUserId(25);
         BulkResponse<Post> result = repository.patch(criteria, new Post());
         assertNotNull(result);
-        assertEquals(300L, result.getCount());
+        assertEquals(300L, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
 
@@ -157,7 +157,7 @@ class PostgrestRepositoryTest {
         criteria.setUserId(25);
         BulkResponse<Post> result = repository.delete(criteria);
         assertNotNull(result);
-        assertEquals(300L, result.getCount());
+        assertEquals(300L, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
 
