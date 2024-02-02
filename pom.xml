@@ -4,7 +4,7 @@
 
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest-bom</artifactId>
-    <version>1.2.3-SNAPSHOT</version>
+    <version>1.2.3</version>
     <packaging>pom</packaging>
     <name>querydsl-postgrest-bom</name>
     <description>Implementation of unified queryDSL for postgRest API</description>
@@ -41,7 +41,7 @@
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <url>https://github.com/ouest-france/querydsl-postgrest.git</url>
-        <tag>HEAD</tag>
+        <tag>temp_$</tag>
     </scm>
 
     <distributionManagement>
