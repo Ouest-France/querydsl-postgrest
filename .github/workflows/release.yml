@@ -11,9 +11,14 @@ jobs:
       contents: write
       packages: write
     steps:
+      - name: Display versions
+        run: |
+          echo "Release Target_Commitish ${{ github.event.release.target_commitish }}"
+          echo "Release Tag_Name ${{ github.event.release.tag_name }}"
+          echo "Release Name ${{ github.event.release.name }}"
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event.release.target_commitish }}
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -31,6 +36,6 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'actions[bot]@github.com'
-          mvn -ntp -B release:prepare release:perform -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} -Dtag=temp_$${{ github.event.inputs.releaseVersion }}
+          mvn -ntp -B release:prepare release:perform -DreleaseVersion=${{ github.event.release.tag_name }} -Dtag=tmp_${{ github.event.release.tag_name }}
       - name: Post-Release
-        run: git push --delete origin temp_$${{ github.event.inputs.releaseVersion }}
+        run: git push --delete origin tmp_${{ github.event.release.tag_name }}
