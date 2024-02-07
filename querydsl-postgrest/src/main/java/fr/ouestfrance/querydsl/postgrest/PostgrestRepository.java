@@ -3,26 +3,20 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.model.Filter;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
-import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
+import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
+import fr.ouestfrance.querydsl.postgrest.services.BulkExecutorService;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
 
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
+import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
 
 /**
  * Postgrest repository implementation
@@ -32,6 +26,7 @@ import java.util.Optional;
 public class PostgrestRepository<T> implements Repository<T> {
 
     private final QueryDslProcessorService<Filter> processorService = new PostgrestQueryProcessorService();
+    private final BulkExecutorService bulkService = new BulkExecutorService();
     private final PostgrestConfiguration annotation;
     private final Map<Header.Method, Map<String, List<String>>> headersMap = new EnumMap<>(Header.Method.class);
     private final PostgrestClient client;
@@ -74,9 +69,9 @@ public class PostgrestRepository<T> implements Repository<T> {
         if (pageable.getPageSize() > 0) {
             headers.put("Range-Unit", List.of("items"));
             headers.put("Range", List.of(pageable.toRange()));
-            headers.computeIfAbsent("Prefer", x -> new ArrayList<>())
-                    .add("count=" + annotation.countStrategy().name().toLowerCase());
         }
+        headers.computeIfAbsent(Prefer.HEADER, x -> new ArrayList<>())
+                .add("count=" + annotation.countStrategy().name().toLowerCase());
         // Add sort if present
         if (pageable.getSort() != null) {
             queryParams.add(OrderFilter.of(pageable.getSort()));
@@ -93,27 +88,49 @@ public class PostgrestRepository<T> implements Repository<T> {
         return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
     }
 
+
     @Override
-    public List<T> upsert(List<Object> values) {
-        return client.post(annotation.resource(), values, headerMap(Header.Method.UPSERT), clazz);
+    public long count(Object criteria) {
+        List<Filter> queryParams = processorService.process(criteria);
+        queryParams.add(CountFilter.of());
+        List<CountItem> response = client.count(annotation.resource(), toMap(queryParams));
+        // Retrieve result headers
+        return response.stream().findFirst().map(x -> x.get("count")).map(Long::valueOf).orElse(0L);
     }
 
 
     @Override
-    public List<T> patch(Object criteria, Object body) {
-        List<Filter> queryParams = processorService.process(criteria);
-        // Add select criteria
-        getSelects(criteria).ifPresent(queryParams::add);
-        return client.patch(annotation.resource(), toMap(queryParams), body, headerMap(Header.Method.UPSERT), clazz);
+    public BulkResponse<T> upsert(List<Object> values) {
+        return client.post(annotation.resource(), values, headerMap(UPSERT), clazz);
     }
 
 
     @Override
-    public List<T> delete(Object criteria) {
-        List<Filter> queryParams = processorService.process(criteria);
-        // Add select criteria
-        getSelects(criteria).ifPresent(queryParams::add);
-        return client.delete(annotation.resource(), toMap(queryParams), headerMap(Header.Method.DELETE), clazz);
+    public BulkResponse<T> upsert(List<Object> values, BulkOptions options) {
+        // Add return representation headers only
+        return bulkService.execute(x -> client.post(annotation.resource(), values, x.getHeaders(), clazz),
+                BulkRequest.builder().headers(headerMap(UPSERT)).build(),
+                options);
+    }
+
+
+    @Override
+    public BulkResponse<T> patch(Object criteria, Object body, BulkOptions options) {
+        List<Filter> filters = processorService.process(criteria);
+        getSelects(criteria).ifPresent(filters::add);
+        return bulkService.execute(x -> client.patch(annotation.resource(), toMap(filters), body, x.getHeaders(), clazz),
+                BulkRequest.builder().headers(headerMap(PATCH)).build(),
+                options);
+    }
+
+
+    @Override
+    public BulkResponse<T> delete(Object criteria, BulkOptions options) {
+        List<Filter> filters = processorService.process(criteria);
+        getSelects(criteria).ifPresent(filters::add);
+        return bulkService.execute(x -> client.delete(annotation.resource(), toMap(filters), x.getHeaders(), clazz),
+                BulkRequest.builder().headers(headerMap(DELETE)).build(),
+                options);
     }
 
     /**
@@ -160,12 +177,18 @@ public class PostgrestRepository<T> implements Repository<T> {
      * @throws PostgrestRequestException when search criteria result gave more than one item
      */
     public Optional<T> findOne(Object criteria) {
-        Page<T> search = search(criteria);
+        List<Filter> queryParams = processorService.process(criteria);
+        Map<String, List<String>> headers = headerMap(Header.Method.GET);
+
+        // Add select criteria
+        getSelects(criteria).ifPresent(queryParams::add);
+        RangeResponse<T> search = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
+
         if (search.getTotalElements() > 1) {
             throw new PostgrestRequestException(annotation.resource(),
                     "Search with params " + criteria + " must found only one result, but found " + search.getTotalElements() + " results");
         }
-        return search.stream().findFirst();
+        return search.data().stream().findFirst();
     }
 
     /**

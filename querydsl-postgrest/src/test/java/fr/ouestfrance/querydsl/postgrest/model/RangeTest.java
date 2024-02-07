@@ -16,6 +16,9 @@ class RangeTest {
         assertEquals(0, range.getOffset());
         assertEquals(24, range.getLimit());
         assertEquals(156, range.getTotalElements());
+
+        long count = range.getCount();
+        assertEquals(25, count);
     }
 
 }

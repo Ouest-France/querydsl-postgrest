@@ -3,6 +3,7 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostDeleteRequest;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class PostgrestRepositoryDeleteMockTest extends AbstractRepositoryMockTest {
         ArgumentCaptor<Map<String, List<String>>> queriesCaptor = multiMapCaptor();
         ArgumentCaptor<Map<String, List<String>>> headerCaptor = multiMapCaptor();
         Post deletedPost = new Post();
-        when(postgrestClient.delete(anyString(), queriesCaptor.capture(), headerCaptor.capture(), eq(Post.class))).thenReturn(List.of(deletedPost));
+        when(postgrestClient.delete(anyString(), queriesCaptor.capture(), headerCaptor.capture(), eq(Post.class))).thenReturn(BulkResponse.of(deletedPost));
         List<Post> delete = repository.delete(new PostDeleteRequest(List.of("1", "2")));
         assertNotNull(delete);
 

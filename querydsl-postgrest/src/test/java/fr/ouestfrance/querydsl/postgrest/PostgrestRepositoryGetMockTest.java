@@ -243,6 +243,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         // Assert query captors
         Map<String, List<String>> queries = queryArgs.getValue();
         String queryString = QueryStringUtils.toQueryString(queries);
+        log.info("queryString {}", queryString);
         log.info("queries {}", queries);
         System.out.println(queries);
         assertEquals(1, queries.get("or").size());
