@@ -1,5 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.BulkOptions;
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
@@ -76,7 +78,7 @@ public interface Repository<T> {
      * @return upsert value
      */
     default T upsert(Object value) {
-        List<T> upsert = upsert(List.of(value));
+        BulkResponse<T> upsert = upsert(List.of(value));
         return upsert.stream().findFirst().orElse(null);
     }
 
@@ -86,7 +88,19 @@ public interface Repository<T> {
      * @param value values to upsert
      * @return values inserted or updated
      */
-    List<T> upsert(List<Object> value);
+    default BulkResponse<T> upsert(List<Object> value) {
+        return upsert(value, new BulkOptions());
+    }
+
+    /**
+     * Upsert multiple values with bulkMode
+     *
+     * @param value   values to upserts
+     * @param options bulk options
+     * @return bulk response
+     */
+    BulkResponse<T> upsert(List<Object> value, BulkOptions options);
+
 
     /**
      * Update multiple body
@@ -95,7 +109,19 @@ public interface Repository<T> {
      * @param body     to update
      * @return list of patched object
      */
-    List<T> patch(Object criteria, Object body);
+    default BulkResponse<T> patch(Object criteria, Object body) {
+        return patch(criteria, body, new BulkOptions());
+    }
+
+    /**
+     * Update multiple body
+     *
+     * @param criteria criteria data
+     * @param body     to update
+     * @param options  bulk options
+     * @return list of patched object
+     */
+    BulkResponse<T> patch(Object criteria, Object body, BulkOptions options);
 
 
     /**
@@ -104,6 +130,17 @@ public interface Repository<T> {
      * @param criteria criteria to create deletion query
      * @return list of deleted items
      */
-    List<T> delete(Object criteria);
+    default BulkResponse<T> delete(Object criteria) {
+        return delete(criteria, new BulkOptions());
+    }
+
+    /**
+     * Delete items using criteria
+     *
+     * @param criteria criteria to create deletion query
+     * @param options  bulk options
+     * @return list of deleted items
+     */
+    BulkResponse<T> delete(Object criteria, BulkOptions options);
 
 }

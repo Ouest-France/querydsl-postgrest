@@ -34,14 +34,14 @@ class PostgrestRepositoryCountMockTest extends AbstractRepositoryMockTest {
 
 
     @Test
-    void shouldCountWhithoutCriteriaOrNull() {
+    void shouldCountWithoutCriteriaOrNull() {
         when(postgrestClient.count(anyString(), any())).thenReturn(List.of(CountItem.of(1)));
         assertEquals(1, repository.count(null));
         assertEquals(1, repository.count());
     }
 
     @Test
-    void shouldCountWhithCriteria() {
+    void shouldCountWithCriteria() {
         PostRequest request = new PostRequest();
         request.setUserId(1);
         request.setId(1);

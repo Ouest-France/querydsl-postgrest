@@ -4,6 +4,7 @@ import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequest;
 import fr.ouestfrance.querydsl.postgrest.criterias.Criteria;
+import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import lombok.SneakyThrows;
@@ -111,6 +112,16 @@ class PostgrestRestTemplateRepositoryTest {
 
     }
 
+    @Test
+    void shouldUpsertBulkPost(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts"))
+                .respond(HttpResponse.response().withHeader("Content-Range", "0-299/300"));
+        BulkResponse<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
+        assertNotNull(result);
+        assertEquals(300L, result.getAffectedRows());
+        assertTrue(result.isEmpty());
+    }
+
 
     @Test
     void shouldPatchPost(MockServerClient client) {
@@ -124,6 +135,19 @@ class PostgrestRestTemplateRepositoryTest {
     }
 
     @Test
+    void shouldPatchBulkPost(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
+                .respond(HttpResponse.response().withHeader("Content-Range", "0-299/300"));
+        PostRequest criteria = new PostRequest();
+        criteria.setUserId(25);
+        BulkResponse<Post> result = repository.patch(criteria, new Post());
+        assertNotNull(result);
+        assertEquals(300L, result.getAffectedRows());
+        assertTrue(result.isEmpty());
+    }
+
+
+    @Test
     void shouldDeletePost(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
                 .respond(jsonFileResponse("posts.json"));
@@ -132,6 +156,18 @@ class PostgrestRestTemplateRepositoryTest {
         List<Post> result = repository.delete(criteria);
         assertNotNull(result);
         result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
+    void shouldDeleteBulkPost(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("userId", "eq.25"))
+                .respond(HttpResponse.response().withHeader("Content-Range", "0-299/300"));
+        PostRequest criteria = new PostRequest();
+        criteria.setUserId(25);
+        BulkResponse<Post> result = repository.delete(criteria);
+        assertNotNull(result);
+        assertEquals(300L, result.getAffectedRows());
+        assertTrue(result.isEmpty());
     }
 
     private HttpResponse jsonFileResponse(String resourceFileName) {

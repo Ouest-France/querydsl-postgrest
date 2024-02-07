@@ -24,6 +24,7 @@ and provides class and annotation to improve your developer experience using Pos
 Add the following dependency to your Maven project:
 
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest</artifactId>
@@ -52,8 +53,10 @@ cookies, ...) you need to deploy.
 
 #### WebClient configuration example
 
-Add the dependency : 
+Add the dependency :
+
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest-webclient-adapter</artifactId>
@@ -87,8 +90,10 @@ public class PostgrestConfiguration {
 
 #### RestTemplate configuration example
 
-Add the dependency : 
+Add the dependency :
+
 ```xml
+
 <dependency>
     <groupId>fr.ouestfrance.querydsl</groupId>
     <artifactId>querydsl-postgrest-resttemplate-adapter</artifactId>
@@ -198,10 +203,6 @@ You can then create your functions :
 - findUsersByName : Will return list of users which name contains part of search content
 
 ```java
-import fr.ouestfrance.querydsl.FilterField;
-import fr.ouestfrance.querydsl.FilterOperation;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -348,6 +349,45 @@ extends FilterOperation with
 | ILIKE    | Case-insensitive LIKE             |  
 | CS       | Contains for JSON/Range datatype  |
 | CD       | Contained for JSON/Range datatype |
+
+#### Bulk Operations
+
+PostgREST allow to execute operations over a wide range items.
+QueryDSL-Postgrest allow to handle pagination fixed by user or fixed by the postgREST max page
+
+```java
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final UserRepository userRepository;
+
+
+    public void invalidatePassword() {
+        UserSearch criteria = new UserSearch();
+        // Will invalidate all passwords with chunk of 1000 users
+        userRepository.patch(criteria, new UserPatchPassword(false), BulkOptions.builder()
+                .countsOnly(true)
+                .pageSize(1000)
+                .build());
+        // Generate n calls of 
+        // PATCH /users {"password_validation": false }  -H Range 0-999
+        // PATCH /users {"password_validation": false }  -H Range 1000-1999
+        // PATCH /users {"password_validation": false }  -H Range 2000-2999
+        // etc since the users are all updated
+    }
+}
+```
+
+| Option     | Default Value | Description                                                               |
+|------------|---------------|---------------------------------------------------------------------------|
+| countsOnly | false         | Place return=headers-only if true, otherwise keep default return          |  
+| pageSize   | -1            | Specify the size of the chunk, otherwise let postgrest activate its limit |
+
+> Bulk Operations are allowed on `Patch`, `Delete` and `Upsert`
 
 ## Need Help ?
 

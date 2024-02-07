@@ -38,6 +38,12 @@ public class CountFilter implements Filter, FilterVisitor {
         return KEY_PARAMETER;
     }
 
+    /**
+     * Get method
+     *
+     * @return methodgit status
+     *
+     */
     public String getMethod() {
         return "count()";
     }

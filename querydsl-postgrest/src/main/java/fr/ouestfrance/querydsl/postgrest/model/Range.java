@@ -49,4 +49,13 @@ public class Range {
         }
         return range;
     }
+
+    /**
+     * Get count
+     *
+     * @return count
+     */
+    public long getCount() {
+        return totalElements == 0 ? 0 : limit - offset + 1;
+    }
 }
