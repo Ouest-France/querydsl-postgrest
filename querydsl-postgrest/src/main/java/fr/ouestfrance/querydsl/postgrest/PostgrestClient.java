@@ -1,5 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 
 import java.util.List;
@@ -60,4 +61,12 @@ public interface PostgrestClient {
      */
     <T> List<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz);
 
+    /**
+     * Count data
+     *
+     * @param resource resource name
+     * @param map      query params
+     * @return list of count items
+     */
+    List<CountItem> count(String resource, Map<String, List<String>> map);
 }

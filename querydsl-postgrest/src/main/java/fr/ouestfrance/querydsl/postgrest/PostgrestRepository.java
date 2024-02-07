@@ -3,26 +3,17 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.model.Filter;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
-import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
+import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
 
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Postgrest repository implementation
@@ -74,7 +65,7 @@ public class PostgrestRepository<T> implements Repository<T> {
         if (pageable.getPageSize() > 0) {
             headers.put("Range-Unit", List.of("items"));
             headers.put("Range", List.of(pageable.toRange()));
-            headers.computeIfAbsent("Prefer", x -> new ArrayList<>())
+            headers.computeIfAbsent("Prefers", x -> new ArrayList<>())
                     .add("count=" + annotation.countStrategy().name().toLowerCase());
         }
         // Add sort if present
@@ -92,6 +83,17 @@ public class PostgrestRepository<T> implements Repository<T> {
         // Compute PageResponse
         return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
     }
+
+
+    @Override
+    public long count(Object criteria) {
+        List<Filter> queryParams = processorService.process(criteria);
+        queryParams.add(CountFilter.of());
+        List<CountItem> response = client.count(annotation.resource(), toMap(queryParams));
+        // Retrieve result headers
+        return response.stream().findFirst().map(x -> x.get("count")).map(Long::valueOf).orElse(0L);
+    }
+
 
     @Override
     public List<T> upsert(List<Object> values) {

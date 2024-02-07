@@ -1,5 +1,8 @@
 package fr.ouestfrance.querydsl.postgrest;
 
+import fr.ouestfrance.querydsl.postgrest.model.CountItem;
+import fr.ouestfrance.querydsl.postgrest.model.Page;
+import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
@@ -83,6 +86,12 @@ public class PostgrestRestTemplate implements PostgrestClient {
         MultiValueMap<String, String> queryParams = toMultiMap(params);
         return restTemplate.exchange(restTemplate.getUriTemplateHandler().expand(UriComponentsBuilder.fromPath(resource)
                 .queryParams(queryParams).build().toString(), new HashMap<>()), HttpMethod.DELETE, new HttpEntity<>(null, toHeaders(headers)), listRef(clazz)).getBody();
+    }
+
+    @Override
+    public List<CountItem> count(String resource, Map<String, List<String>> map) {
+        return restTemplate.exchange(restTemplate.getUriTemplateHandler().expand(UriComponentsBuilder.fromPath(resource)
+                .queryParams(toMultiMap(map)).build().toString(), new HashMap<>()), HttpMethod.GET, new HttpEntity<>(null, new HttpHeaders()), listRef(CountItem.class)).getBody();
     }
 
     private static <T> ParameterizedTypeReference<List<T>> listRef(Class<T> clazz) {

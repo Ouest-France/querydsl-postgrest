@@ -2,10 +2,7 @@ package fr.ouestfrance.querydsl.postgrest.builders;
 
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.Sort;
-import fr.ouestfrance.querydsl.postgrest.model.impl.CompositeFilter;
-import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
-import fr.ouestfrance.querydsl.postgrest.model.impl.QueryFilter;
-import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
+import fr.ouestfrance.querydsl.postgrest.model.impl.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +58,16 @@ public final class QueryFilterVisitor {
         builder.append(filter.getSelectAttributes().stream().map(
                         x -> x.getAlias().isEmpty() ? x.getValue() : x.getAlias() + ":" + x.getValue())
                 .collect(Collectors.joining(",")));
+    }
+
+
+    /**
+     * Transform a Select filter to Query
+     *
+     * @param filter select filter
+     */
+    public void visit(CountFilter filter) {
+        builder.append(filter.getMethod());
     }
 
     /**
