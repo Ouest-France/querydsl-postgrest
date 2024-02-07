@@ -13,7 +13,9 @@ jobs:
     steps:
       - name: Info
         run: |
-          echo "Launch info $${{ github.event.inputs }}"
+          echo "Release Target_Commitish ${{ github.event.release.target_commitish }}"
+          echo "Release Tag_Name ${{ github.event.release.tag_name }}"
+          echo "Release Name ${{ github.event.release.name }}"
           echo "Release version: ${{ github.event.inputs.releaseVersion }}, Development version: ${{ github.event.inputs.developmentVersion }}"
       - uses: actions/checkout@v4
         with:
