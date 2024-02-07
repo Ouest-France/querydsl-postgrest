@@ -67,10 +67,7 @@ public final class QueryFilterVisitor {
      * @param filter select filter
      */
     public void visit(CountFilter filter) {
-        builder.append("count()");
-        if(filter.getGroupBy() != null) {
-            builder.append(COMA).append(filter.getGroupBy());
-        }
+        builder.append(filter.getMethod());
     }
 
     /**

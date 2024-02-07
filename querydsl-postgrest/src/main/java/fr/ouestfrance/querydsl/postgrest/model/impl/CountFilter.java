@@ -13,26 +13,12 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CountFilter implements Filter, FilterVisitor {
 
     /**
      * Default query param key for selection
      */
     private static final String KEY_PARAMETER = "select";
-    /**
-     * list of fields
-     */
-    private String groupBy;
-
-
-    /**
-     * Create select filter from embedded resources
-     * @return select filter
-     */
-    public static Filter groupBy(String field) {
-        return new CountFilter(field);
-    }
 
     /**
      * Create select filter from embedded resources
@@ -53,21 +39,7 @@ public class CountFilter implements Filter, FilterVisitor {
         return KEY_PARAMETER;
     }
 
-
-    /**
-     * Attribute name
-     */
-    @Getter
-    @RequiredArgsConstructor
-    public static class Attribute {
-        /**
-         * alias
-         */
-        private final String alias;
-        /**
-         * value selected
-         */
-        private final String value;
-
+    public String getMethod() {
+        return "count()";
     }
 }

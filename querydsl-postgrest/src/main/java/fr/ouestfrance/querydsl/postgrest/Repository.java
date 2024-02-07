@@ -26,6 +26,15 @@ public interface Repository<T> {
 
 
     /**
+     * Count all items
+     *
+     * @return count result
+     */
+    default long count() {
+        return count(null);
+    }
+
+    /**
      * Count from criteria object
      *
      * @param criteria search criteria
