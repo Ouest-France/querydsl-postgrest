@@ -213,7 +213,7 @@ public class PostgrestRepository<T> implements Repository<T> {
     private Map<String, List<String>> headerMap(Header.Method method) {
         Map<String, List<String>> map = new LinkedHashMap<>();
         Optional.ofNullable(headersMap.get(method))
-                .ifPresent(map::putAll);
+                .ifPresent(headerMap -> headerMap.forEach((key, value) -> map.computeIfAbsent(key, x -> new ArrayList<>()).addAll(value)));
         return map;
     }
 }
