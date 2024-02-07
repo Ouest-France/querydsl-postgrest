@@ -13,6 +13,7 @@ import java.util.List;
  * @param <T> type of data
  */
 @Getter
+@SuppressWarnings("java:S2160")
 public class BulkResponse<T> extends ArrayList<T> {
 
     public BulkResponse(List<T> data, long affectedRows, long totalElements) {
