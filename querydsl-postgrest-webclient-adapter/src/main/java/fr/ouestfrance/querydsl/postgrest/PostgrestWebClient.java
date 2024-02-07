@@ -1,8 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
+import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
@@ -18,10 +17,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
+import static fr.ouestfrance.querydsl.postgrest.ParametrizedTypeUtils.listRef;
 import static fr.ouestfrance.querydsl.postgrest.ResponseUtils.toBulkResponse;
-import static fr.ouestfrance.querydsl.postgrest.ParametrizedTypeUtils.*;
 
 /**
  * Rest interface for querying postgrest
@@ -66,15 +64,25 @@ public class PostgrestWebClient implements PostgrestClient {
         return Optional.ofNullable(response)
                 .map(HttpEntity::getBody)
                 .map(x -> {
-                    Range range = Optional.ofNullable(response.getHeaders().get("Content-Range"))
-                            .map(List::stream)
-                            .map(Stream::findFirst)
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .map(Range::of).orElse(null);
+                    Range range = ResponseUtils.getCount(response.getHeaders())
+                            .orElse(null);
                     return new RangeResponse<>(x, range);
                 }).orElse(new RangeResponse<>(List.of(), null));
     }
+
+    @Override
+    public List<CountItem> count(String resource, Map<String, List<String>> params) {
+        ResponseEntity<List<CountItem>> response = webClient.get().uri(uriBuilder -> {
+                    uriBuilder.path(resource);
+                    uriBuilder.queryParams(toMultiMap(params));
+                    return uriBuilder.build();
+                })
+                .retrieve()
+                .toEntity(listRef(CountItem.class))
+                .block();
+        return Optional.ofNullable(response).map(HttpEntity::getBody).orElse(List.of());
+    }
+
 
     @Override
     public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
@@ -115,7 +123,6 @@ public class PostgrestWebClient implements PostgrestClient {
                 .toEntity(listRef(clazz)).block();
         return toBulkResponse(response);
     }
-
 
 
     private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {

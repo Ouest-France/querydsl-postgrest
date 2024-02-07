@@ -13,8 +13,6 @@ import java.util.List;
  * @param <T> type of data
  */
 @Getter
-@EqualsAndHashCode(callSuper = true)
-@ToString
 public class BulkResponse<T> extends ArrayList<T> {
 
     public BulkResponse(List<T> data, long affectedRows, long totalElements) {

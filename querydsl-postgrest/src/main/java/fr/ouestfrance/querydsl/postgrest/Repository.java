@@ -26,6 +26,24 @@ public interface Repository<T> {
         return search(criteria, Pageable.unPaged());
     }
 
+
+    /**
+     * Count all items
+     *
+     * @return count result
+     */
+    default long count() {
+        return count(null);
+    }
+
+    /**
+     * Count from criteria object
+     *
+     * @param criteria search criteria
+     * @return count result
+     */
+    long count(Object criteria);
+
     /**
      * Search from criteria object with pagination
      *
@@ -60,7 +78,7 @@ public interface Repository<T> {
      * @return upsert value
      */
     default T upsert(Object value) {
-        List<T> upsert = upsert(List.of(value));
+        BulkResponse<T> upsert = upsert(List.of(value));
         return upsert.stream().findFirst().orElse(null);
     }
 

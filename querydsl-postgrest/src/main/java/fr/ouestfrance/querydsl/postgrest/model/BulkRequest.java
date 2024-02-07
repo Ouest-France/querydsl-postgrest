@@ -12,7 +12,6 @@ import java.util.Map;
  * BulkRequest
  */
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 public class BulkRequest {

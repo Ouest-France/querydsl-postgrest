@@ -1,8 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.PageImpl;
+import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
@@ -22,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static fr.ouestfrance.querydsl.postgrest.ParametrizedTypeUtils.listRef;
 import static fr.ouestfrance.querydsl.postgrest.ResponseUtils.toBulkResponse;
@@ -59,12 +57,8 @@ public class PostgrestRestTemplate implements PostgrestClient {
         return Optional.of(response)
                 .map(HttpEntity::getBody)
                 .map(x -> {
-                    Range range = Optional.ofNullable(response.getHeaders().get("Content-Range"))
-                            .map(List::stream)
-                            .map(Stream::findFirst)
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .map(Range::of).orElse(null);
+                    Range range = ResponseUtils.getCount(response.getHeaders())
+                            .orElse(null);
                     return new RangeResponse<>(x, range);
                 }).orElse(new RangeResponse<>(List.of(), null));
     }
@@ -89,6 +83,12 @@ public class PostgrestRestTemplate implements PostgrestClient {
         ResponseEntity<List<T>> response = restTemplate.exchange(restTemplate.getUriTemplateHandler().expand(UriComponentsBuilder.fromPath(resource)
                 .queryParams(toMultiMap(params)).build().toString(), new HashMap<>()), HttpMethod.DELETE, new HttpEntity<>(null, toHeaders(headers)), listRef(clazz));
         return toBulkResponse(response);
+    }
+
+    @Override
+    public List<CountItem> count(String resource, Map<String, List<String>> map) {
+        return restTemplate.exchange(restTemplate.getUriTemplateHandler().expand(UriComponentsBuilder.fromPath(resource)
+                .queryParams(toMultiMap(map)).build().toString(), new HashMap<>()), HttpMethod.GET, new HttpEntity<>(null, new HttpHeaders()), listRef(CountItem.class)).getBody();
     }
 
 

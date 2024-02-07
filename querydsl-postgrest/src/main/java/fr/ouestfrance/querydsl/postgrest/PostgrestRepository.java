@@ -6,6 +6,7 @@ import fr.ouestfrance.querydsl.postgrest.annotations.Select;
 import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
+import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.BulkExecutorService;
@@ -86,6 +87,17 @@ public class PostgrestRepository<T> implements Repository<T> {
         // Compute PageResponse
         return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
     }
+
+
+    @Override
+    public long count(Object criteria) {
+        List<Filter> queryParams = processorService.process(criteria);
+        queryParams.add(CountFilter.of());
+        List<CountItem> response = client.count(annotation.resource(), toMap(queryParams));
+        // Retrieve result headers
+        return response.stream().findFirst().map(x -> x.get("count")).map(Long::valueOf).orElse(0L);
+    }
+
 
     @Override
     public BulkResponse<T> upsert(List<Object> values) {
