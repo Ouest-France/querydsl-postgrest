@@ -74,12 +74,14 @@ public class PostgrestRepository<T> implements Repository<T> {
         }
         // Add select criteria
         getSelects(criteria).ifPresent(queryParams::add);
-        Page<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
-        if (response instanceof PageImpl<T> page) {
-            page.setPageable(pageable);
-        }
-        // Retrieve result headers
-        return response;
+        RangeResponse<T> response = client.search(annotation.resource(), toMap(queryParams), headers, clazz);
+
+        int pageSize = Optional.of(pageable)
+                .filter(Pageable::hasSize)
+                .map(Pageable::getPageSize)
+                .orElse(response.getPageSize());
+        // Compute PageResponse
+        return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
     }
 
 

@@ -99,6 +99,7 @@ public interface Pageable {
 
     /**
      * Return the next page
+     *
      * @return next page
      */
     default Pageable next() {
@@ -107,9 +108,19 @@ public interface Pageable {
 
     /**
      * Return the previous page or the first one
+     *
      * @return previous page
      */
     default Pageable previous() {
         return getPageNumber() == 0 ? this : new PageRequest(getPageNumber() - 1, getPageSize(), getSort());
+    }
+
+    /**
+     * Indicates that the pageable object is unPaged
+     *
+     * @return true if unPaged
+     */
+    default boolean hasSize() {
+        return getPageSize() > 0;
     }
 }

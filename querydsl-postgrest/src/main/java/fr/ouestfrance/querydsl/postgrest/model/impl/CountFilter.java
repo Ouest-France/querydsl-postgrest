@@ -4,7 +4,6 @@ import fr.ouestfrance.querydsl.postgrest.builders.FilterVisitor;
 import fr.ouestfrance.querydsl.postgrest.builders.QueryFilterVisitor;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
