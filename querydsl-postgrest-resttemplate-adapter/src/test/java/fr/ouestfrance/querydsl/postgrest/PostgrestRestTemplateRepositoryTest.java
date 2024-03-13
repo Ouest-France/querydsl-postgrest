@@ -37,9 +37,8 @@ class PostgrestRestTemplateRepositoryTest {
     void beforeEach(MockServerClient client) {
         client.reset();
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setUriTemplateHandler(new DefaultUriBuilderFactory("http://localhost:8007"));
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
-        repository = new PostRepository(PostgrestRestTemplate.of(restTemplate));
+        repository = new PostRepository(PostgrestRestTemplate.of(restTemplate, "http://localhost:8007"));
     }
 
     @Test

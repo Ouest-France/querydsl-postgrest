@@ -66,9 +66,8 @@ public class PostgrestConfiguration {
     public PostgrestClient podstgrestClient() {
         String serviceUrl = "http://localhost:9000";
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setUriTemplateHandler(new DefaultUriBuilderFactory(serviceUrl));
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
-        return PostgrestRestTemplate.of(webclient);
+        return PostgrestRestTemplate.of(restTemplate, serviceUrl);
     }
 }
 ```
