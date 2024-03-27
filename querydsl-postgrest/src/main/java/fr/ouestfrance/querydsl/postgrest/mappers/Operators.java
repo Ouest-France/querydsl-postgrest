@@ -57,6 +57,10 @@ public final class Operators {
      */
     public static final String IS = "is";
     /**
+     * is not operation
+     */
+    public static final String IS_NOT = "not.is";
+    /**
      * Contains operation for JSON/Range datatype
      */
     public static final String CONTAINS = "cs";
