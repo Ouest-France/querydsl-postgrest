@@ -1,7 +1,5 @@
 package fr.ouestfrance.querydsl.postgrest.services.ext;
 
-import java.util.List;
-
 import fr.ouestfrance.querydsl.FilterOperation;
 import fr.ouestfrance.querydsl.model.GroupFilter;
 import fr.ouestfrance.querydsl.postgrest.mappers.*;
@@ -9,6 +7,8 @@ import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.CompositeFilter;
 import fr.ouestfrance.querydsl.service.ext.Mapper;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
+
+import java.util.List;
 
 /**
  * Concrete implementation of QueryDslProcessorService
@@ -22,7 +22,7 @@ public class PostgrestQueryProcessorService implements QueryDslProcessorService<
             new GreaterThanEqualsMapper(), new GreaterThanMapper(),
             new InMapper(), new LessThanEqualsMapper(), new LessThanMapper(),
             new LikeMapper(), new NotEqualsMapper(), new NotInMapper(),
-            new CaseInsensitiveLikeMapper(), new ContainsMapper(), new ContainedMapper());
+            new CaseInsensitiveLikeMapper(), new ContainsMapper(), new ContainedMapper(), new IsNullMapper());
 
     @Override
     public Mapper<Filter> getMapper(Class<? extends FilterOperation> operation) {
