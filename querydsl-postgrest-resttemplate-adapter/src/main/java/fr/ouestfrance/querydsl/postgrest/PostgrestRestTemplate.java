@@ -2,7 +2,7 @@ package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.CountItem;
-import fr.ouestfrance.querydsl.postgrest.model.Range;
+import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,7 @@ public class PostgrestRestTemplate implements PostgrestClient {
         return Optional.of(response)
                 .map(HttpEntity::getBody)
                 .map(x -> {
-                    Range range = ResponseUtils.getCount(response.getHeaders())
+                    HeaderRange range = ResponseUtils.getCount(response.getHeaders())
                             .orElse(null);
                     return new RangeResponse<>(x, range);
                 }).orElse(new RangeResponse<>(List.of(), null));

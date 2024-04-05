@@ -3,9 +3,11 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
+import fr.ouestfrance.querydsl.postgrest.mappers.Operators;
 import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
+import fr.ouestfrance.querydsl.postgrest.model.impl.CompositeFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
@@ -141,7 +143,17 @@ public class PostgrestRepository<T> implements Repository<T> {
      */
     private Map<String, List<String>> toMap(List<Filter> filters) {
         Map<String, List<String>> map = new LinkedHashMap<>();
-        filters.forEach(x -> map.computeIfAbsent(x.getKey(), key -> new ArrayList<>()).add(x.getFilterString()));
+        filters.forEach(x -> {
+            // If filter is an "and" with the same keys, then we decompose it and transform it to filter list
+            if (x instanceof CompositeFilter compositeFilter && compositeFilter.getKey().equals("and") &&
+                    compositeFilter.getFilters().stream().map(Filter::getKey).distinct().count() == 1) {
+                for (Filter filter : compositeFilter.getFilters()) {
+                    map.computeIfAbsent(filter.getKey(), key -> new ArrayList<>()).add(filter.getFilterString());
+                }
+            } else {
+                map.computeIfAbsent(x.getKey(), key -> new ArrayList<>()).add(x.getFilterString());
+            }
+        });
         return map;
     }
 
