@@ -1,7 +1,7 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.Range;
+import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -26,8 +26,8 @@ public final class ResponseUtils {
     public static <T> BulkResponse<T> toBulkResponse(ResponseEntity<List<T>> response) {
         return Optional.ofNullable(response)
                 .map(x -> {
-                    Optional<Range> count = getCount(x.getHeaders());
-                    return new BulkResponse<>(x.getBody(), count.map(Range::getCount).orElse(0L), count.map(Range::getTotalElements).orElse(0L));
+                    Optional<HeaderRange> count = getCount(x.getHeaders());
+                    return new BulkResponse<>(x.getBody(), count.map(HeaderRange::getCount).orElse(0L), count.map(HeaderRange::getTotalElements).orElse(0L));
                 })
                 .orElse(new BulkResponse<>(List.of(), 0L, 0L));
     }
@@ -38,9 +38,9 @@ public final class ResponseUtils {
      * @param headers headers where Content-Range is
      * @return range object
      */
-    public static Optional<Range> getCount(HttpHeaders headers) {
+    public static Optional<HeaderRange> getCount(HttpHeaders headers) {
         return Optional.ofNullable(headers.get("Content-Range"))
                 .flatMap(x -> x.stream().findFirst())
-                .map(Range::of);
+                .map(HeaderRange::of);
     }
 }

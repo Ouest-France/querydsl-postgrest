@@ -5,6 +5,7 @@ import java.util.List;
 
 import fr.ouestfrance.querydsl.FilterField;
 import fr.ouestfrance.querydsl.FilterOperation;
+import fr.ouestfrance.querydsl.postgrest.model.Range;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,4 +33,5 @@ public class PostRequest {
     private List<String> codes;
     @FilterField(operation = FilterOperation.NOTIN.class, key = "status")
     private List<String> excludes;
+
 }

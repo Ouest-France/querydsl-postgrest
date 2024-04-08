@@ -1,24 +1,23 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import fr.ouestfrance.querydsl.postgrest.app.Post;
-import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
-import fr.ouestfrance.querydsl.postgrest.app.PostRequest;
+import fr.ouestfrance.querydsl.postgrest.app.*;
 import fr.ouestfrance.querydsl.postgrest.criterias.Criteria;
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
+import fr.ouestfrance.querydsl.postgrest.model.Range;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerSettings;
-import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import shaded_package.org.apache.commons.io.IOUtils;
 
 import java.nio.charset.Charset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -169,4 +168,32 @@ class PostgrestWebClientRepositoryTest {
     private String jsonOf(String name) {
         return IOUtils.resourceToString(name, Charset.defaultCharset(), getClass().getClassLoader());
     }
+
+
+    @Test
+    void shouldValidateRangeRequest(ClientAndServer client) {
+        // Call has to be
+        // http://localhost:8007/posts?birthDate=gte.2021-01-01&birthDate=lte.2021-12-31&siblings=gte.1&siblings=lte.3&select=*,authors(*)
+        //
+        client.when(request().withPath("/posts")
+                        .withQueryStringParameter("birthDate", "gte.2021-01-01", "lte.2021-12-31")
+                        .withQueryStringParameter("siblings", "lte.3", "gte.1")
+                        .withQueryStringParameter("select", "*,authors(*)"))
+                .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
+        RangeRequest criteria = new RangeRequest();
+        criteria.setBirthDate(Range.between(LocalDate.of(2021, 1, 1), LocalDate.of(2021, 12, 31)));
+        criteria.setSiblings(Range.between(1, 3));
+        Page<Post> search = repository.search(criteria, Pageable.ofSize(6));
+        assertNotNull(search);
+
+        OldWayRangeRequest oldWayRangeRequest = new OldWayRangeRequest();
+        oldWayRangeRequest.setMinBirthDate(criteria.getBirthDate().getLower());
+        oldWayRangeRequest.setMaxBirthDate(criteria.getBirthDate().getUpper());
+        oldWayRangeRequest.setMinSiblings(criteria.getSiblings().getLower());
+        oldWayRangeRequest.setMaxSiblings(criteria.getSiblings().getUpper());
+        Page<Post> oldWaySearch = repository.search(oldWayRangeRequest, Pageable.ofSize(6));
+        assertNotNull(oldWaySearch);
+    }
+
+
 }

@@ -9,7 +9,7 @@ import java.util.List;
  * @param data  Elements returned
  * @param range Range returned (first returned, last returned, total elements)
  */
-public record RangeResponse<T>(List<T> data, Range range) {
+public record RangeResponse<T>(List<T> data, HeaderRange range) {
 
     /**
      * Create a range response from a list of elements

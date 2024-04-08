@@ -125,7 +125,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setCodes(List.of("a", "b", "c"));
         request.setExcludes(List.of("z"));
         request.setValidDate(LocalDate.of(2023, 11, 10));
-        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(new RangeResponse<>(List.of(new Post()),new Range(0,1,2)));
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(new RangeResponse<>(List.of(new Post()),new HeaderRange(0,1,2)));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(1, Sort.by(Sort.Order.asc("id"))));
         assertNotNull(search);
@@ -156,7 +156,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setValidDate(LocalDate.of(2023, 11, 10));
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
-        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new RangeResponse<>(List.of(new Post()),  new Range(0,2, 2)));
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(new RangeResponse<>(List.of(new Post()),  new HeaderRange(0,2, 2)));
 
         Page<Post> search = repository.search(request, Pageable.ofSize(1, 1, Sort.by(Sort.Order.asc("id"))));
         assertNotNull(search);
@@ -289,6 +289,26 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         Map<String, List<String>> queries = queryArgs.getValue();
         System.out.println(queries);
         assertEquals("(dateFinValidite.gte.2023-12-04,dateFinValidite.is.null)", queries.get("filtrePublication.or").stream().findFirst().orElseThrow());
+    }
+
+    @Test
+    void testRangeRequest() {
+        RangeRequest request = new RangeRequest();
+        request.setBirthDate(Range.between(LocalDate.of(2023, 12, 4), LocalDate.of(2023, 12, 5)));
+        request.setSiblings(Range.between(1, 3));
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.ofSize(10));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        System.out.println(queries);
+        assertEquals("gte.2023-12-04", queries.get("birthDate").get(0));
+        assertEquals("lte.2023-12-05", queries.get("birthDate").get(1));
+        assertEquals("gte.1", queries.get("siblings").get(0));
+        assertEquals("lte.3", queries.get("siblings").get(1));
     }
 
 }
