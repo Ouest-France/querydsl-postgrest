@@ -90,7 +90,26 @@ class PostgrestWebClientRepositoryTest {
     }
 
     @Test
-    void shouldUpsertPost(ClientAndServer client) {
+    void shouldPost(ClientAndServer client) {
+        client.when(request().withPath("/posts"))
+                .respond(jsonFileResponse("new_posts.json"));
+        List<Post> result = repository.post(new ArrayList<>(List.of(new Post())));
+        assertNotNull(result);
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+
+    }
+
+    @Test
+    void shouldPostBulk(ClientAndServer client) {
+        client.when(request().withPath("/posts"))
+                .respond(jsonFileResponse("new_posts.json"));
+        List<Post> result = repository.post(new ArrayList<>(List.of(new Post())));
+        assertNotNull(result);
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
+    void shouldUpsert(ClientAndServer client) {
         client.when(request().withPath("/posts"))
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
@@ -100,15 +119,13 @@ class PostgrestWebClientRepositoryTest {
     }
 
     @Test
-    void shouldUpsertBulkPost(ClientAndServer client) {
+    void shouldUpsertBulk(ClientAndServer client) {
         client.when(request().withPath("/posts"))
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
         assertNotNull(result);
         result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
-
     }
-
 
     @Test
     void shouldPatchPost(ClientAndServer client) {

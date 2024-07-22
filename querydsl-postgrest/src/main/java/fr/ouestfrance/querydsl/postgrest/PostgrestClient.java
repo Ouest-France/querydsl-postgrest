@@ -35,7 +35,7 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of inserted objects
      */
-    <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz);
+    <T> BulkResponse<T> post(String resource, Map<String, List<String>> queryParams, List<Object> value, Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Patch data

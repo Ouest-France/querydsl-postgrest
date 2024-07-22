@@ -85,9 +85,10 @@ public class PostgrestWebClient implements PostgrestClient {
 
 
     @Override
-    public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> {
                     uriBuilder.path(resource);
+                    uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
                 }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .bodyValue(value)

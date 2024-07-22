@@ -185,15 +185,17 @@ public class UserRepository extends PostgrestRepository<User> {
 
 ##### PostgrestRepository functions
 
-| Method  | Return        | Parameters                                                  | Description                                                                                                                |
-|---------|---------------|-------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| search  | `Page<T>`     | criteria : `Object`<br/>pageRequest : `Pageable` (optional) | Search request based on criteria and pagination                                                                            |
-| findOne | `Optional<T>` | criteria : `Object`                                         | find one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria return more than one item              |
-| getOne  | `T`           | criteria : `Object`                                         | get one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no entity                      |
-| upsert  | `T`           | value : `Object`                                            | post data, you may define the strategy (Insert / Update) by adding header annotation `Prefer: resolution=merge-duplicates` |
-| upsert  | `List<T>`     | value : `List<Object>`                                      | post data, you may define the strategy (Insert / Update) by adding header annotation `Prefer: resolution=merge-duplicates` |
-| update  | `List<T>`     | criteria : `Object`<br/>value: `Object`                     | Update entities found by criterias                                                                                         |
-| delete  | `List<T>`     | criteria : `Object`                                         | Delete entities found by the criteria                                                                                      |
+| Method  | Return        | Parameters                                                  | Description                                                                                                                                                         |
+|---------|---------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| search  | `Page<T>`     | criteria : `Object`<br/>pageRequest : `Pageable` (optional) | Search request based on criteria and pagination                                                                                                                     |
+| findOne | `Optional<T>` | criteria : `Object`                                         | find one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria return more than one item                                                       |
+| getOne  | `T`           | criteria : `Object`                                         | get one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no entity                                                               |
+| post    | `T`           | value : `Object`                                            | post data                                                                                                                                                           |
+| post    | `List<T>`     | value : `List<Object>`                                      | post list of datas                                                                                                                                                  |
+| upsert  | `T`           | value : `Object`                                            | Insert or Update data. You can specify which properties form the unique constraint by adding @OnConflict annotation on your implementation of PostgrestRepository   |
+| upsert  | `List<T>`     | value : `List<Object>`                                      | Insert or Update datas. You can specify which properties form the unique constraint by adding @OnConflict annotation on your implementation of PostgrestRepository |
+| update  | `List<T>`     | criteria : `Object`<br/>value: `Object`                     | Update entities found by criterias                                                                                                                                  |
+| delete  | `List<T>`     | criteria : `Object`                                         | Delete entities found by the criteria                                                                                                                               |
 
 ### Using the repository
 
@@ -291,13 +293,24 @@ Will return json like this :
 
 This library allow strategy based on `Prefer` header see
 official [PostgREST Documentation](https://postgrest.org/en/stable/references/api/preferences.html) by adding `@Header`
-annotation over your Repositoru
+annotation over your Repository
 
 ```java
 // Return representation object for all functions
 @Header(key = Prefer.HEADER, value = Prefer.Return.REPRESENTATION)
 // Make Upsert using POST with Merge_Duplicated value
 @Header(key = Prefer.HEADER, value = Prefer.Resolution.MERGE_DUPLICATES, methods = UPSERT)
+public class PostRepository extends PostgrestRepository<Post> {
+}
+```
+##### Upserts
+```java
+// If you want to specify which properties form your unique constraint, you don't need to write this header anymore :
+@Header(key = Prefer.HEADER, value = Prefer.Resolution.MERGE_DUPLICATES, methods = UPSERT)
+public class PostRepository extends PostgrestRepository<Post> {
+}
+//just annotate your implem of Repository with @OnConflict and specify wich fields form your unique constraint :
+@OnConflict(columnNames = {"codeOrigine", "referencePersonne", "uuidAdresse"})
 public class PostRepository extends PostgrestRepository<Post> {
 }
 ```
@@ -387,7 +400,7 @@ public class UserService {
 | countsOnly | false         | Place return=headers-only if true, otherwise keep default return          |  
 | pageSize   | -1            | Specify the size of the chunk, otherwise let postgrest activate its limit |
 
-> Bulk Operations are allowed on `Patch`, `Delete` and `Upsert`
+> Bulk Operations are allowed on  `Post` ,`Patch`, `Delete` and `Upsert`
 
 ## Need Help ?
 

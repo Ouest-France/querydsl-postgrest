@@ -59,11 +59,12 @@ public class PostgrestRestTemplate implements PostgrestClient {
     }
 
     @Override
-    public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
-        ResponseEntity<List<T>> response = restTemplate.exchange(getUri(resource), HttpMethod.POST, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
+    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+        ResponseEntity<List<T>> response = restTemplate.exchange(
+                getUri(resource, params),
+                HttpMethod.POST, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
         return toBulkResponse(response);
     }
-
 
     @Override
     public <T> BulkResponse<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
