@@ -27,6 +27,7 @@ import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
  */
 public class PostgrestRepository<T> implements Repository<T> {
 
+    public static final String ON_CONFLICT_QUERY_PARAMS = "on_conflict";
     private final QueryDslProcessorService<Filter> processorService = new PostgrestQueryProcessorService();
     private final BulkExecutorService bulkService = new BulkExecutorService();
     private final PostgrestConfiguration annotation;
@@ -116,34 +117,37 @@ public class PostgrestRepository<T> implements Repository<T> {
 
     @Override
     public BulkResponse<T> upsert(List<Object> values) {
-        return client.post(annotation.resource(), getQueryParams(), values, getHeaders(), clazz);
+        return client.post(annotation.resource(), getUpsertQueryParams(), values, getUpsertHeaderMap(), clazz);
     }
 
     @Override
     public BulkResponse<T> upsert(List<Object> values, BulkOptions options) {
         // Add return representation headers only
-        return bulkService.execute(x -> client.post(annotation.resource(), getQueryParams(), values, x.getHeaders(), clazz),
-                BulkRequest.builder().headers(getHeaders()).build(),
+        return bulkService.execute(x -> client.post(annotation.resource(), getUpsertQueryParams(), values, x.getHeaders(), clazz),
+                BulkRequest.builder().headers(getUpsertHeaderMap()).build(),
                 options);
     }
 
-    private Map<String, List<String>> getQueryParams() {
-        OnConflict onConflict = this.getClass().getAnnotation(OnConflict.class);
-        Map<String, List<String>> queryParams = new HashMap<>();
-        if (Objects.nonNull(onConflict)) {
-            queryParams.put("on_conflict", Arrays.asList(onConflict.columnNames()));
-        }
-        return queryParams;
+    /**
+     * Retrieve on conflict query params
+     * @return map of query params for on conflict if annotation OnConflict is present otherwise empty map
+     */
+    private Map<String, List<String>> getUpsertQueryParams() {
+        return Optional.ofNullable(this.getClass().getAnnotation(OnConflict.class))
+                .map(OnConflict::columnNames)
+                .map(Arrays::asList)
+                .map(onConflictList-> Map.of(ON_CONFLICT_QUERY_PARAMS, onConflictList))
+                .orElse(Map.of());
     }
 
-    private Map<String, List<String>> getHeaders() {
+    /**
+     * Retrieve header map for upsert
+     * @return map of headers for upsert
+     */
+    private Map<String, List<String>> getUpsertHeaderMap() {
         Map<String, List<String>> headerMap = headerMap(UPSERT);
-        List<String> currentHeaders = headerMap.get(Prefer.HEADER);
-        if (currentHeaders == null) {
-            currentHeaders = new ArrayList<>();
-        }
-        currentHeaders.add(Prefer.Resolution.MERGE_DUPLICATES);
-        headerMap.put(Prefer.HEADER, currentHeaders);
+        headerMap.computeIfAbsent(Prefer.HEADER, x -> new ArrayList<>())
+                .add(Prefer.Resolution.MERGE_DUPLICATES);
         return headerMap;
     }
 

@@ -45,8 +45,10 @@ class PostgrestWebClientRepositoryTest {
 
     @Test
     void shouldSearchPosts(ClientAndServer client) {
+        client.reset();
         client.when(request().withPath("/posts").withQueryStringParameter("select", "*,authors(*)"))
-                .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
+                .respond(jsonFileResponse("posts.json")
+                        .withHeader("Content-Range", "0-6/300"));
         Page<Post> search = repository.search(new PostRequest(), Pageable.ofSize(6));
         System.out.println(search.getTotalElements());
         System.out.println(search.getTotalPages());

@@ -15,5 +15,5 @@ public @interface OnConflict {
      * Columns names of the unique constraint
      * @return Tab of the Columns names
      */
-    String[] columnNames() default "";
+    String[] columnNames() default {};
 }
