@@ -1,9 +1,9 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
+import fr.ouestfrance.querydsl.postgrest.annotations.OnConflict;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
 import fr.ouestfrance.querydsl.postgrest.annotations.Select;
-import fr.ouestfrance.querydsl.postgrest.mappers.Operators;
 import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
@@ -27,6 +27,7 @@ import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
  */
 public class PostgrestRepository<T> implements Repository<T> {
 
+    public static final String ON_CONFLICT_QUERY_PARAMS = "on_conflict";
     private final QueryDslProcessorService<Filter> processorService = new PostgrestQueryProcessorService();
     private final BulkExecutorService bulkService = new BulkExecutorService();
     private final PostgrestConfiguration annotation;
@@ -102,19 +103,53 @@ public class PostgrestRepository<T> implements Repository<T> {
 
 
     @Override
-    public BulkResponse<T> upsert(List<Object> values) {
-        return client.post(annotation.resource(), values, headerMap(UPSERT), clazz);
+    public BulkResponse<T> post(List<Object> values) {
+        return client.post(annotation.resource(), new HashMap<>(), values, headerMap(UPSERT), clazz);
     }
 
-
     @Override
-    public BulkResponse<T> upsert(List<Object> values, BulkOptions options) {
+    public BulkResponse<T> post(List<Object> values, BulkOptions options) {
         // Add return representation headers only
-        return bulkService.execute(x -> client.post(annotation.resource(), values, x.getHeaders(), clazz),
+        return bulkService.execute(x -> client.post(annotation.resource(), new HashMap<>(), values, x.getHeaders(), clazz),
                 BulkRequest.builder().headers(headerMap(UPSERT)).build(),
                 options);
     }
 
+    @Override
+    public BulkResponse<T> upsert(List<Object> values) {
+        return client.post(annotation.resource(), getUpsertQueryParams(), values, getUpsertHeaderMap(), clazz);
+    }
+
+    @Override
+    public BulkResponse<T> upsert(List<Object> values, BulkOptions options) {
+        // Add return representation headers only
+        return bulkService.execute(x -> client.post(annotation.resource(), getUpsertQueryParams(), values, x.getHeaders(), clazz),
+                BulkRequest.builder().headers(getUpsertHeaderMap()).build(),
+                options);
+    }
+
+    /**
+     * Retrieve on conflict query params
+     * @return map of query params for on conflict if annotation OnConflict is present otherwise empty map
+     */
+    private Map<String, List<String>> getUpsertQueryParams() {
+        return Optional.ofNullable(this.getClass().getAnnotation(OnConflict.class))
+                .map(OnConflict::columnNames)
+                .map(Arrays::asList)
+                .map(onConflictList-> Map.of(ON_CONFLICT_QUERY_PARAMS, onConflictList))
+                .orElse(Map.of());
+    }
+
+    /**
+     * Retrieve header map for upsert
+     * @return map of headers for upsert
+     */
+    private Map<String, List<String>> getUpsertHeaderMap() {
+        Map<String, List<String>> headerMap = headerMap(UPSERT);
+        headerMap.computeIfAbsent(Prefer.HEADER, x -> new ArrayList<>())
+                .add(Prefer.Resolution.MERGE_DUPLICATES);
+        return headerMap;
+    }
 
     @Override
     public BulkResponse<T> patch(Object criteria, Object body, BulkOptions options) {

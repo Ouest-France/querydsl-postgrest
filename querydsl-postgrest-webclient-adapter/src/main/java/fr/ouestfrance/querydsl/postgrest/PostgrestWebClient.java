@@ -85,9 +85,10 @@ public class PostgrestWebClient implements PostgrestClient {
 
 
     @Override
-    public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> {
                     uriBuilder.path(resource);
+                    uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
                 }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .bodyValue(value)
@@ -125,10 +126,20 @@ public class PostgrestWebClient implements PostgrestClient {
     }
 
 
+    /**
+     * Convert map to MultiValueMap
+     * @param params map
+     * @return MultiValueMap
+     */
     private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {
         return new LinkedMultiValueMap<>(params);
     }
 
+    /**
+     * Safe add headers to httpHeaders
+     * @param headers headers
+     * @param httpHeaders httpHeaders
+     */
     private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
         Optional.ofNullable(headers)
                 .map(PostgrestWebClient::toMultiMap).ifPresent(httpHeaders::addAll);

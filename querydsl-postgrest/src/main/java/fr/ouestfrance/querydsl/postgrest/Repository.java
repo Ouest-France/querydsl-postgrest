@@ -72,10 +72,40 @@ public interface Repository<T> {
     T getOne(Object criteria);
 
     /**
+     * Post a value
+     *
+     * @param value to post
+     * @return value inserted
+     */
+    default T post(Object value) {
+        BulkResponse<T> post = post(List.of(value));
+        return post.stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Post multiple values
+     *
+     * @param values values to post
+     * @return values inserted
+     */
+    default BulkResponse<T> post(List<Object> values) {
+        return post(values, new BulkOptions());
+    }
+
+    /**
+     * Post multiple values with bulkMode
+     *
+     * @param value   values to post
+     * @param options bulk options
+     * @return bulk response
+     */
+    BulkResponse<T> post(List<Object> value, BulkOptions options);
+
+    /**
      * Upsert a value
      *
      * @param value to upsert
-     * @return upsert value
+     * @return inserted or updated value
      */
     default T upsert(Object value) {
         BulkResponse<T> upsert = upsert(List.of(value));
@@ -85,22 +115,21 @@ public interface Repository<T> {
     /**
      * Upsert multiple values
      *
-     * @param value values to upsert
+     * @param values values to upsert
      * @return values inserted or updated
      */
-    default BulkResponse<T> upsert(List<Object> value) {
-        return upsert(value, new BulkOptions());
+    default BulkResponse<T> upsert(List<Object> values) {
+        return upsert(values, new BulkOptions());
     }
 
     /**
      * Upsert multiple values with bulkMode
      *
-     * @param value   values to upserts
+     * @param values   values to upsert
      * @param options bulk options
      * @return bulk response
      */
-    BulkResponse<T> upsert(List<Object> value, BulkOptions options);
-
+    BulkResponse<T> upsert(List<Object> values, BulkOptions options);
 
     /**
      * Update multiple body

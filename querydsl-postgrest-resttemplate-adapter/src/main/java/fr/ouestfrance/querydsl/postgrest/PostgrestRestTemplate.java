@@ -59,11 +59,12 @@ public class PostgrestRestTemplate implements PostgrestClient {
     }
 
     @Override
-    public <T> BulkResponse<T> post(String resource, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
-        ResponseEntity<List<T>> response = restTemplate.exchange(getUri(resource), HttpMethod.POST, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
+    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+        ResponseEntity<List<T>> response = restTemplate.exchange(
+                getUri(resource, params),
+                HttpMethod.POST, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
         return toBulkResponse(response);
     }
-
 
     @Override
     public <T> BulkResponse<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
@@ -88,17 +89,30 @@ public class PostgrestRestTemplate implements PostgrestClient {
     }
 
 
+    /**
+     * Convert map to MultiValueMap
+     * @param params map
+     * @return MultiValueMap
+     */
     private static MultiValueMap<String, String> toMultiMap(Map<String, List<String>> params) {
         return new LinkedMultiValueMap<>(params);
     }
 
+    /**
+     * Convert map to HttpHeaders
+     * @param headers map
+     * @return HttpHeaders
+     */
     private static HttpHeaders toHeaders(Map<String, List<String>> headers) {
         return new HttpHeaders(toMultiMap(headers));
     }
-    private URI getUri(String resource) {
-        return getUri(resource, null);
-    }
 
+    /**
+     * Get URI from resource and params
+     * @param resource resource
+     * @param params params
+     * @return URI
+     */
     private URI getUri(String resource, Map<String, List<String>> params) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseUrl).path(resource);
         if (Objects.nonNull(params)) {

@@ -19,7 +19,6 @@ import org.mockserver.model.HttpResponse;
 import org.mockserver.model.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.DefaultUriBuilderFactory;
 import shaded_package.org.apache.commons.io.IOUtils;
 
 import java.nio.charset.Charset;
@@ -102,17 +101,35 @@ class PostgrestRestTemplateRepositoryTest {
     }
 
     @Test
-    void shouldUpsertPost(MockServerClient client) {
+    void shouldPost(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts"))
+                .respond(jsonFileResponse("new_posts.json"));
+        List<Post> result = repository.post(new ArrayList<>(List.of(new Post())));
+        assertNotNull(result);
+        result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
+    }
+
+    @Test
+    void shouldBulkPost(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts"))
+                .respond(HttpResponse.response().withHeader("Content-Range", "0-299/300"));
+        BulkResponse<Post> result = repository.post(new ArrayList<>(List.of(new Post())));
+        assertNotNull(result);
+        assertEquals(300L, result.getAffectedRows());
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldUpsert(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts"))
                 .respond(jsonFileResponse("new_posts.json"));
         List<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
         assertNotNull(result);
         result.stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
-
     }
 
     @Test
-    void shouldUpsertBulkPost(MockServerClient client) {
+    void shouldBulkUpsert(MockServerClient client) {
         client.when(HttpRequest.request().withPath("/posts"))
                 .respond(HttpResponse.response().withHeader("Content-Range", "0-299/300"));
         BulkResponse<Post> result = repository.upsert(new ArrayList<>(List.of(new Post())));
@@ -120,7 +137,6 @@ class PostgrestRestTemplateRepositoryTest {
         assertEquals(300L, result.getAffectedRows());
         assertTrue(result.isEmpty());
     }
-
 
     @Test
     void shouldPatchPost(MockServerClient client) {
