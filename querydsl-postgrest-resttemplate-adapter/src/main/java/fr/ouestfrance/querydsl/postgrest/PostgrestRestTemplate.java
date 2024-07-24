@@ -37,6 +37,13 @@ public class PostgrestRestTemplate implements PostgrestClient {
 
     private final String baseUrl;
 
+    /**
+     * Default RestTemplate constructor
+     *
+     * @param restTemplate restTemplate
+     * @param baseUrl      baseUrl of postgrest
+     * @return concrete client
+     */
     public static PostgrestRestTemplate of(RestTemplate restTemplate, String baseUrl) {
         return new PostgrestRestTemplate(restTemplate, baseUrl);
     }
@@ -91,6 +98,7 @@ public class PostgrestRestTemplate implements PostgrestClient {
 
     /**
      * Convert map to MultiValueMap
+     *
      * @param params map
      * @return MultiValueMap
      */
@@ -100,6 +108,7 @@ public class PostgrestRestTemplate implements PostgrestClient {
 
     /**
      * Convert map to HttpHeaders
+     *
      * @param headers map
      * @return HttpHeaders
      */
@@ -109,8 +118,9 @@ public class PostgrestRestTemplate implements PostgrestClient {
 
     /**
      * Get URI from resource and params
+     *
      * @param resource resource
-     * @param params params
+     * @param params   params
      * @return URI
      */
     private URI getUri(String resource, Map<String, List<String>> params) {
