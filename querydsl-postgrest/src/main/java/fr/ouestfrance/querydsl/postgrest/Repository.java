@@ -79,6 +79,9 @@ public interface Repository<T> {
      */
     default T post(Object value) {
         BulkResponse<T> post = post(List.of(value));
+        if (post == null) {
+            return null;
+        }
         return post.stream().findFirst().orElse(null);
     }
 
@@ -109,6 +112,9 @@ public interface Repository<T> {
      */
     default T upsert(Object value) {
         BulkResponse<T> upsert = upsert(List.of(value));
+        if (upsert == null) {
+            return null;
+        }
         return upsert.stream().findFirst().orElse(null);
     }
 
@@ -125,7 +131,7 @@ public interface Repository<T> {
     /**
      * Upsert multiple values with bulkMode
      *
-     * @param values   values to upsert
+     * @param values  values to upsert
      * @param options bulk options
      * @return bulk response
      */
