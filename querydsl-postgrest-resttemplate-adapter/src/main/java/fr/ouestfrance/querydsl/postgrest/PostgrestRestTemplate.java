@@ -131,5 +131,4 @@ public class PostgrestRestTemplate implements PostgrestClient {
         return uriBuilder.build().encode().toUri();
     }
 
-
 }
