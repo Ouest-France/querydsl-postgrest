@@ -133,11 +133,11 @@ public class PostgrestRepository<T> implements Repository<T> {
      * @return map of query params for on conflict if annotation OnConflict is present otherwise empty map
      */
     private Map<String, List<String>> getUpsertQueryParams() {
-        return Optional.ofNullable(this.getClass().getAnnotation(OnConflict.class))
-                .map(OnConflict::columnNames)
-                .map(Arrays::asList)
-                .map(onConflictList-> Map.of(ON_CONFLICT_QUERY_PARAMS, onConflictList))
-                .orElse(Map.of());
+        OnConflict onConflict = this.getClass().getAnnotation(OnConflict.class);
+        if (Objects.nonNull(onConflict)) {
+            return Map.of(ON_CONFLICT_QUERY_PARAMS, List.of(String.join(",", onConflict.columnNames())));
+        }
+        return Collections.emptyMap();
     }
 
     /**
