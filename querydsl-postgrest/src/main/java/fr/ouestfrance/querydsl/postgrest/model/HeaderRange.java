@@ -46,9 +46,9 @@ public class HeaderRange {
             range.offset = Integer.parseInt(matcher.group("offset"));
             range.limit = Integer.parseInt(matcher.group("limit"));
             String total = matcher.group("total");
-            if(total.startsWith("*")){
+            if (total.startsWith("*")) {
                 range.totalElements = range.limit - range.offset + 1;
-            }else {
+            } else {
                 range.totalElements = Long.parseLong(total);
             }
         }
