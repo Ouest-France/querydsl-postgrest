@@ -19,7 +19,7 @@ public class HeaderRange {
      * Range regexp
      */
     @SuppressWarnings("java:S5852")
-    private static final Pattern REGEXP = Pattern.compile("(?<offset>\\d+)-(?<limit>\\d+)/(?<total>\\d+)");
+    private static final Pattern REGEXP = Pattern.compile("(?<offset>\\d+)-(?<limit>\\d+)/(?<total>[*\\d]+)");
     /**
      * Start of the range
      */
@@ -45,7 +45,12 @@ public class HeaderRange {
         if (matcher.find()) {
             range.offset = Integer.parseInt(matcher.group("offset"));
             range.limit = Integer.parseInt(matcher.group("limit"));
-            range.totalElements = Long.parseLong(matcher.group("total"));
+            String total = matcher.group("total");
+            if(total.startsWith("*")){
+                range.totalElements = range.limit - range.offset + 1;
+            }else {
+                range.totalElements = Long.parseLong(total);
+            }
         }
         return range;
     }

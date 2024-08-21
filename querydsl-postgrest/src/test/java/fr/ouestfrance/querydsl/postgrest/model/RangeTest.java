@@ -20,4 +20,16 @@ class RangeTest {
         assertEquals(25, count);
     }
 
+    @Test
+    void shouldCreateRangeFromUnlimited() {
+        HeaderRange range = HeaderRange.of("0-24/*");
+        assertNotNull(range);
+        assertEquals(0, range.getOffset());
+        assertEquals(24, range.getLimit());
+        assertEquals(25, range.getTotalElements());
+
+        long count = range.getCount();
+        assertEquals(25, count);
+    }
+
 }
