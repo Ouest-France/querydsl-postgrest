@@ -16,7 +16,7 @@ public @interface Select {
      * Selection
      * @return string representation of the selection
      */
-    String value();
+    String[] value();
 
     /**
      * Select the value as a specific alias name

@@ -8,6 +8,7 @@ import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.reflect.TypeUtils;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,13 +32,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class PostgrestRestTemplateRepositoryTest {
 
     private PostgrestRepository<Post> repository;
+    private PostgrestRpcClient rpcClient;
 
     @BeforeEach
     void beforeEach(MockServerClient client) {
         client.reset();
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
-        repository = new PostRepository(PostgrestRestTemplate.of(restTemplate, "http://localhost:8007"));
+        PostgrestRestTemplate postgrestRestTemplate = PostgrestRestTemplate.of(restTemplate, "http://localhost:8007");
+        repository = new PostRepository(postgrestRestTemplate);
+        rpcClient = new PostgrestRpcClient(postgrestRestTemplate);
     }
 
     @Test
@@ -183,6 +187,37 @@ class PostgrestRestTemplateRepositoryTest {
         assertNotNull(result);
         assertEquals(300L, result.getAffectedRows());
         assertTrue(result.isEmpty());
+    }
+
+
+    @Test
+    void shouldCallRpc(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1"))
+                .respond(jsonResponse("""
+                        {"id": 1, "title": "test"}
+                        """));
+
+        Post result = rpcClient.executeRpc("testV1", null, Post.class);
+        assertNotNull(result);
+        System.out.println(result);
+       }
+
+
+    @Test
+    void shouldCallRpcResultIsList(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1"))
+                .respond(jsonResponse("""
+                        [{"id": 1, "title": "test"}]
+                        """));
+
+        List<Post> result = rpcClient.executeRpc("testV1", null, TypeUtils.parameterize(List.class, Post.class));
+        assertNotNull(result);
+        System.out.println(result);
+       }
+
+    private HttpResponse jsonResponse(String content) {
+        return HttpResponse.response().withContentType(MediaType.APPLICATION_JSON)
+                .withBody(content);
     }
 
     private HttpResponse jsonFileResponse(String resourceFileName) {

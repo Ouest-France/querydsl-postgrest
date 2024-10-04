@@ -4,6 +4,8 @@ import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import fr.ouestfrance.querydsl.postgrest.model.Sort;
 import fr.ouestfrance.querydsl.postgrest.model.impl.*;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,8 +42,8 @@ public final class QueryFilterVisitor {
     public void visit(OrderFilter filter) {
         builder.append(filter.getSort().getOrders().stream().map(
                 x -> x.getProperty()
-                        + (Sort.Direction.ASC.equals(x.getDirection()) ? EMPTY_STRING : DOT + "desc")
-                        + (switch (x.getNullHandling()) {
+                     + (Sort.Direction.ASC.equals(x.getDirection()) ? EMPTY_STRING : DOT + "desc")
+                     + (switch (x.getNullHandling()) {
                     case NATIVE -> EMPTY_STRING;
                     case NULLS_FIRST -> DOT + "nullsfirst";
                     case NULLS_LAST -> DOT + "nullslast";
@@ -54,9 +56,13 @@ public final class QueryFilterVisitor {
      * @param filter select filter
      */
     public void visit(SelectFilter filter) {
-        builder.append("*,");
-        builder.append(filter.getSelectAttributes().stream().map(
-                        x -> x.getAlias().isEmpty() ? x.getValue() : x.getAlias() + ":" + x.getValue())
+        if (filter.isAddAll()) {
+            builder.append("*,");
+        }
+        builder.append(filter.getSelectAttributes().stream()
+                .filter(x -> x.getValue() != null && x.getValue().length > 0)
+                .map(
+                        x -> x.getAlias().isEmpty() ? String.join(",", x.getValue()) : x.getAlias() + ":" + Arrays.stream(x.getValue()).findFirst().get())
                 .collect(Collectors.joining(",")));
     }
 

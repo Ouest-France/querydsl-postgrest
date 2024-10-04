@@ -402,6 +402,78 @@ public class UserService {
 
 > Bulk Operations are allowed on  `Post` ,`Patch`, `Delete` and `Upsert`
 
+#### Rpc Calls 
+
+Supports of [rpc function calls](https://postgrest.org/en/v12/references/api/functions.html#functions-as-rpc)
+
+**Configuration**
+Its use a PostgrestRpcClient which use the PostgrestClient
+
+```java
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
+import fr.ouestfrance.querydsl.postgrest.PostgrestRpcClient;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+
+@Configuration
+public class PostgrestConfiguration {
+
+    @Bean
+    public PostgrestRpcClient rpcClient() {
+        String serviceUrl = "http://localhost:9000";
+        WebClient webclient = WebClient.builder()
+                .baseUrl(serviceUrl)
+                // Here you can add any filters or default configuration you want
+                .build();
+
+        return new PostgrestRpcClient(PostgrestWebClient.of(webclient));
+    }
+}
+```
+
+then you can call your rpc method using this call 
+
+```java
+public class Example{
+    private PostgrestRpcClient rpcClient;
+    
+    public List<Coordinate> getCoordinates(){
+        // call getCoordinates_v1 and expect to return a list of Coordinates
+        return rpcClient.exectureRpc("getCoordinates_v1", TypeUtils.parameterize(List.class, Coordinate.class));
+        // CALL => ${base_url}/rpc/getCoordinates_v1
+    }
+    
+    public Coordinate getCoordinate(Point point){
+        // call findClosestCoordinate_v1 with body {x:?, y:?} 
+        // expect to return a single coordinate
+        return rpcClient.executeRpc("findClosestCoordinate_v1", point, Coordinate.class);
+        // CALL => ${base_url}/rpc/findClosestCoordinate_v1
+        // => with body {x: point.x, y: point.y}
+    }
+    
+    public SimpleCoordinate getCoordinateX(Point point){
+        // call findClosestCoordinate_v1 with body {x:?, y:?}
+        // add Criteria that add select=x,y and z=gte.0.0
+        // and return the result as a SimpleCoordinate class
+        return rpcClient.executeRpc("findClosestCoordinate_v1", new CoordinateCriteria(0.0), point, SimpleCoordinate.class);
+        // CALL => ${base_url}/rpc/findClosestCoordinate_v1?z=gte.0.0&select=x,y
+        // => with body {x: point.x, y: point.y}
+    }
+    
+    
+    @Select({"x", "y"})
+    record CoordinateCriteria(
+            @FilterField(key = "z", operation = FilterOperation.GTE.class)
+            private Float z
+    ){}
+    
+    record SimpleCoordinate(Float x, Float y){}
+}
+```
+
 ## Need Help ?
 
 If you need help with the library please start a new thread QA / Issue on github
