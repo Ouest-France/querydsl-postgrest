@@ -3,22 +3,22 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.annotations.Header;
 import fr.ouestfrance.querydsl.postgrest.annotations.OnConflict;
 import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
-import fr.ouestfrance.querydsl.postgrest.annotations.Select;
 import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
-import fr.ouestfrance.querydsl.postgrest.model.impl.CompositeFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.BulkExecutorService;
 import fr.ouestfrance.querydsl.postgrest.services.ext.PostgrestQueryProcessorService;
+import fr.ouestfrance.querydsl.postgrest.utils.FilterUtils;
 import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
 
 import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
+import static fr.ouestfrance.querydsl.postgrest.utils.FilterUtils.toMap;
 
 /**
  * Postgrest repository implementation
@@ -171,47 +171,13 @@ public class PostgrestRepository<T> implements Repository<T> {
     }
 
     /**
-     * Transform a filter list to map of queryString
-     *
-     * @param filters list of filters
-     * @return map of query strings
-     */
-    private Map<String, List<String>> toMap(List<Filter> filters) {
-        Map<String, List<String>> map = new LinkedHashMap<>();
-        filters.forEach(x -> {
-            // If filter is an "and" with the same keys, then we decompose it and transform it to filter list
-            if (x instanceof CompositeFilter compositeFilter && compositeFilter.getKey().equals("and") &&
-                    compositeFilter.getFilters().stream().map(Filter::getKey).distinct().count() == 1) {
-                for (Filter filter : compositeFilter.getFilters()) {
-                    map.computeIfAbsent(filter.getKey(), key -> new ArrayList<>()).add(filter.getFilterString());
-                }
-            } else {
-                map.computeIfAbsent(x.getKey(), key -> new ArrayList<>()).add(x.getFilterString());
-            }
-        });
-        return map;
-    }
-
-
-    /**
      * Extract selection on criteria and class
      *
      * @param criteria search criteria
      * @return attributes
      */
     private Optional<Filter> getSelects(Object criteria) {
-        List<SelectFilter.Attribute> attributes = new ArrayList<>();
-        Select[] clazzAnnotation = getClass().getAnnotationsByType(Select.class);
-        if (clazzAnnotation.length > 0) {
-            attributes.addAll(Arrays.stream(clazzAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value())).toList());
-        }
-        if (criteria != null) {
-            Select[] criteriaAnnotation = criteria.getClass().getAnnotationsByType(Select.class);
-            if (criteriaAnnotation.length > 0) {
-                attributes.addAll(Arrays.stream(criteriaAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value())).toList());
-            }
-        }
-        return Optional.of(attributes)
+        return Optional.of(FilterUtils.getSelectAttributes(this, criteria))
                 .filter(x -> !x.isEmpty())
                 .map(SelectFilter::of);
     }

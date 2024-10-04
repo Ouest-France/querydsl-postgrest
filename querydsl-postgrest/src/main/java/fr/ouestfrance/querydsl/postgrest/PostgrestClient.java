@@ -4,6 +4,7 @@ import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public interface PostgrestClient {
      * @param clazz    type of return
      * @return list of inserted objects
      */
-    <T> BulkResponse<T> post(String resource, Map<String, List<String>> queryParams, List<Object> value, Map<String, List<String>> headers, Class<T> clazz);
+    <T> BulkResponse<T> post(String resource, Map<String, List<String>> queryParams, Object value, Map<String, List<String>> headers, Class<T> clazz);
 
     /**
      * Patch data
@@ -70,4 +71,16 @@ public interface PostgrestClient {
      * @return list of count items
      */
     List<CountItem> count(String resource, Map<String, List<String>> map);
+
+    /**
+     * Call RPC
+     *
+     * @param rpcName rpc name
+     * @param params  query params
+     * @param body    body request to send
+     * @param type    class of return
+     * @param <V>     type of return object
+     * @return MultiValueMap
+     */
+    <V> V rpc(String rpcName, Map<String, List<String>> params, Object body, Type type);
 }

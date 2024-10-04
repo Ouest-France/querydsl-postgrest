@@ -6,6 +6,7 @@ import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,6 +15,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,9 +86,29 @@ public class PostgrestWebClient implements PostgrestClient {
         return Optional.ofNullable(response).map(HttpEntity::getBody).orElse(List.of());
     }
 
+    @Override
+    public <V> V rpc(String rpcName, Map<String, List<String>> params, Object body, Type clazz) {
+        WebClient.RequestBodySpec request = webClient.post().uri(uriBuilder -> {
+            uriBuilder.path(rpcName);
+            uriBuilder.queryParams(toMultiMap(params));
+            return uriBuilder.build();
+        });
+        if(body != null){
+            request.bodyValue(body);
+        }
+        Object result = request
+                .retrieve()
+                .bodyToMono(ParameterizedTypeReference.forType(clazz))
+                .block();
+        if(result != null) {
+            return (V) result;
+        }
+        return null;
+    }
+
 
     @Override
-    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> {
                     uriBuilder.path(resource);
                     uriBuilder.queryParams(toMultiMap(params));
@@ -119,7 +142,8 @@ public class PostgrestWebClient implements PostgrestClient {
                     uriBuilder.path(resource);
                     uriBuilder.queryParams(toMultiMap(params));
                     return uriBuilder.build();
-                }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
+                })
+                .headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
                 .toEntity(listRef(clazz)).block();
         return toBulkResponse(response);

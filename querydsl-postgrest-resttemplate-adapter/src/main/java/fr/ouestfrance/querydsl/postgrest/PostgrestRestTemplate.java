@@ -6,6 +6,7 @@ import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +68,7 @@ public class PostgrestRestTemplate implements PostgrestClient {
     }
 
     @Override
-    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, List<Object> value, Map<String, List<String>> headers, Class<T> clazz) {
+    public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
         ResponseEntity<List<T>> response = restTemplate.exchange(
                 getUri(resource, params),
                 HttpMethod.POST, new HttpEntity<>(value, toHeaders(headers)), listRef(clazz));
@@ -93,6 +95,12 @@ public class PostgrestRestTemplate implements PostgrestClient {
     public List<CountItem> count(String resource, Map<String, List<String>> map) {
         return restTemplate.exchange(
                 getUri(resource, map), HttpMethod.GET, new HttpEntity<>(null, new HttpHeaders()), listRef(CountItem.class)).getBody();
+    }
+
+    @Override
+    public <V> V rpc(String rpcName, Map<String, List<String>> map, Object body, Type type) {
+        return (V) restTemplate.exchange(
+                getUri(rpcName, map), HttpMethod.POST, new HttpEntity<>(body, new HttpHeaders()), ParameterizedTypeReference.forType(type)).getBody();
     }
 
 

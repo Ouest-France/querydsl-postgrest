@@ -8,9 +8,12 @@ import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.reflect.TypeUtils;
 import org.junit.jupiter.api.Test;
+import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerSettings;
+import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,6 +24,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.ouestfrance.querydsl.postgrest.TestUtils.jsonFileResponse;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
@@ -29,9 +33,10 @@ import static org.mockserver.model.HttpResponse.response;
 @Slf4j
 class PostgrestWebClientRepositoryTest {
 
-    private final PostgrestRepository<Post> repository = new PostRepository(PostgrestWebClient.of(WebClient.builder()
+    private final PostgrestWebClient client = PostgrestWebClient.of(WebClient.builder()
             .baseUrl("http://localhost:8007/")
-            .build()));
+            .build());
+    private final PostgrestRepository<Post> repository = new PostRepository(client);
 
 
     @Test
@@ -178,15 +183,8 @@ class PostgrestWebClientRepositoryTest {
         assertTrue(result.isEmpty());
     }
 
-    private HttpResponse jsonFileResponse(String resourceFileName) {
-        return response().withContentType(MediaType.APPLICATION_JSON)
-                .withBody(jsonOf(resourceFileName));
-    }
 
-    @SneakyThrows
-    private String jsonOf(String name) {
-        return IOUtils.resourceToString(name, Charset.defaultCharset(), getClass().getClassLoader());
-    }
+
 
 
     @Test
@@ -213,6 +211,4 @@ class PostgrestWebClientRepositoryTest {
         Page<Post> oldWaySearch = repository.search(oldWayRangeRequest, Pageable.ofSize(6));
         assertNotNull(oldWaySearch);
     }
-
-
 }

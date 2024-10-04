@@ -4,6 +4,7 @@ import fr.ouestfrance.querydsl.postgrest.builders.FilterVisitor;
 import fr.ouestfrance.querydsl.postgrest.builders.QueryFilterVisitor;
 import fr.ouestfrance.querydsl.postgrest.model.Filter;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -13,7 +14,7 @@ import java.util.List;
  * Select filter allow to describe a selection
  */
 @Getter
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SelectFilter implements Filter, FilterVisitor {
 
     /**
@@ -23,7 +24,8 @@ public class SelectFilter implements Filter, FilterVisitor {
     /**
      * alias
      */
-    private final List<Attribute> selectAttributes;
+    private List<Attribute> selectAttributes;
+    private boolean addAll;
 
     /**
      * Create select filter from embedded resources
@@ -32,7 +34,19 @@ public class SelectFilter implements Filter, FilterVisitor {
      * @return select filter
      */
     public static Filter of(List<Attribute> selectAttributes) {
-        return new SelectFilter(selectAttributes);
+        return new SelectFilter(selectAttributes, true);
+    }
+
+    public static Filter only(List<Attribute> selectAttributes) {
+        return new SelectFilter(selectAttributes, false);
+    }
+
+    public Filter append(List<Attribute> selectAttributes) {
+        if(selectAttributes == null || selectAttributes.isEmpty()) {
+            return this;
+        }
+        this.selectAttributes.addAll(selectAttributes);
+        return this;
     }
 
     @Override
@@ -59,7 +73,7 @@ public class SelectFilter implements Filter, FilterVisitor {
         /**
          * value selected
          */
-        private final String value;
+        private final String[] value;
 
     }
 }
