@@ -8,7 +8,6 @@ import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -197,10 +196,9 @@ class PostgrestRestTemplateRepositoryTest {
                         {"id": 1, "title": "test"}
                         """));
 
-        Post result = rpcClient.executeRpc("testV1", null, Post.class);
+        Post result = rpcClient.executeRpc("testV1", null, Post.class).orElse(null);
         assertNotNull(result);
-        System.out.println(result);
-       }
+    }
 
 
     @Test
@@ -210,10 +208,9 @@ class PostgrestRestTemplateRepositoryTest {
                         [{"id": 1, "title": "test"}]
                         """));
 
-        List<Post> result = rpcClient.executeRpc("testV1", null, TypeUtils.parameterize(List.class, Post.class));
+        Post[] result = rpcClient.executeRpc("testV1", null, Post[].class).orElse(null);
         assertNotNull(result);
-        System.out.println(result);
-       }
+    }
 
     private HttpResponse jsonResponse(String content) {
         return HttpResponse.response().withContentType(MediaType.APPLICATION_JSON)
