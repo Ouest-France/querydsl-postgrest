@@ -4,6 +4,7 @@ import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
+import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
@@ -13,6 +14,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -99,8 +103,13 @@ public class PostgrestRestTemplate implements PostgrestClient {
 
     @Override
     public <V> V rpc(String rpcName, Map<String, List<String>> map, Object body, Type type) {
-        return (V) restTemplate.exchange(
-                getUri(rpcName, map), HttpMethod.POST, new HttpEntity<>(body, new HttpHeaders()), ParameterizedTypeReference.forType(type)).getBody();
+        try {
+            return (V) restTemplate.exchange(
+                    getUri(rpcName, map), HttpMethod.POST, new HttpEntity<>(body, new HttpHeaders()), ParameterizedTypeReference.forType(type))
+                    .getBody();
+        } catch (HttpClientErrorException.NotFound exception) {
+            throw new PostgrestRequestException(rpcName, exception.getMessage(), exception, exception.getResponseBodyAsString());
+        }
     }
 
 

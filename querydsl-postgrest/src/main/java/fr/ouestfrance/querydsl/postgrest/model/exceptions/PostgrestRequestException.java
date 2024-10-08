@@ -1,9 +1,16 @@
 package fr.ouestfrance.querydsl.postgrest.model.exceptions;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Runtime exception for querying failure
  */
+@Getter
+@Setter
 public class PostgrestRequestException extends RuntimeException {
+
+    private String responseBody;
 
     /**
      * PostgrestRequestException constructor
@@ -30,6 +37,19 @@ public class PostgrestRequestException extends RuntimeException {
 
     /**
      * PostgrestRequestException constructor
+     * @param resourceName resource name
+     * @param message cause message
+     * @param cause exception raised
+     * @param errorBody error body
+     */
+    public PostgrestRequestException(String resourceName, String message, Throwable cause, String errorBody) {
+        this("Error on querying " + resourceName + " cause by " + message, cause);
+        this.responseBody = errorBody;
+    }
+
+
+    /**
+     * PostgrestRequestException constructor
      *
      * @param message cause message
      */
@@ -46,4 +66,6 @@ public class PostgrestRequestException extends RuntimeException {
     public PostgrestRequestException(String message, Throwable cause) {
         super(message, cause);
     }
+
+
 }
