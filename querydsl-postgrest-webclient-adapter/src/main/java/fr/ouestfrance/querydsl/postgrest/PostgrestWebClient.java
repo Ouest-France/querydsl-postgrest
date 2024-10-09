@@ -4,6 +4,7 @@ import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
+import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
@@ -13,7 +14,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -93,14 +97,14 @@ public class PostgrestWebClient implements PostgrestClient {
             uriBuilder.queryParams(toMultiMap(params));
             return uriBuilder.build();
         });
-        if(body != null){
-            request.bodyValue(body);
-        }
+        Optional.ofNullable(body).ifPresent(request::bodyValue);
         Object result = request
                 .retrieve()
                 .bodyToMono(ParameterizedTypeReference.forType(clazz))
+                // On not found raise postgrestRequestException with body
+                .onErrorMap(WebClientResponseException.NotFound.class, e -> new PostgrestRequestException(rpcName, e.getMessage(), e, e.getResponseBodyAsString()))
                 .block();
-        if(result != null) {
+        if (result != null) {
             return (V) result;
         }
         return null;
@@ -152,6 +156,7 @@ public class PostgrestWebClient implements PostgrestClient {
 
     /**
      * Convert map to MultiValueMap
+     *
      * @param params map
      * @return MultiValueMap
      */
@@ -161,7 +166,8 @@ public class PostgrestWebClient implements PostgrestClient {
 
     /**
      * Safe add headers to httpHeaders
-     * @param headers headers
+     *
+     * @param headers     headers
      * @param httpHeaders httpHeaders
      */
     private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
