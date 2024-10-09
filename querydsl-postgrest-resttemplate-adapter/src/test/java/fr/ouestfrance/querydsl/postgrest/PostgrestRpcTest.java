@@ -13,8 +13,6 @@ import org.mockserver.model.HttpRequest;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-
 import static fr.ouestfrance.querydsl.postgrest.TestUtils.jsonResponse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,7 +37,7 @@ class PostgrestRpcTest {
                 .respond(jsonResponse("""
                         {"id": 1, "title": "test"}
                         """));
-        Post result = rpcClient.executeRpc("testV1",  Post.class);
+        Post result = rpcClient.executeRpc("testV1", Post.class).orElse(null);
         assertNotNull(result);
     }
 
@@ -54,9 +52,8 @@ class PostgrestRpcTest {
 
         PostRequestWithSelect criteria = new PostRequestWithSelect();
         criteria.setUserId(1);
-        Post result = rpcClient.executeRpc("testV1", criteria,null, Post.class);
+        Post result = rpcClient.executeRpc("testV1", criteria, null, Post.class).orElse(null);
         assertNotNull(result);
-        System.out.println(result);
     }
 
     @Test
@@ -70,9 +67,8 @@ class PostgrestRpcTest {
 
         PostRequestWithSelect criteria = new PostRequestWithSelect();
         criteria.setUserId(1);
-        List<Post> result = rpcClient.executeRpc("testV1", criteria, null, TypeUtils.parameterize(List.class, Post.class));
+        Post[] result = rpcClient.executeRpc("testV1", criteria, null, Post[].class).orElse(null);
         assertNotNull(result);
-        System.out.println(result);
     }
 
 
