@@ -23,4 +23,10 @@ public @interface Select {
      * @return alias name
      */
     String alias() default "";
+
+    /**
+     * Select only the fields specified
+     * @return true if only the fields specified
+     */
+    boolean only() default false;
 }

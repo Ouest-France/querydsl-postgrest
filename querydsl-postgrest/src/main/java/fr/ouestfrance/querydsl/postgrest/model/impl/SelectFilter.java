@@ -34,11 +34,18 @@ public class SelectFilter implements Filter, FilterVisitor {
      * @return select filter
      */
     public static Filter of(List<Attribute> selectAttributes) {
-        return new SelectFilter(selectAttributes, true);
+        return new SelectFilter(selectAttributes, !isOnly(selectAttributes));
     }
 
     public static Filter only(List<Attribute> selectAttributes) {
         return new SelectFilter(selectAttributes, false);
+    }
+
+    private static boolean isOnly(List<Attribute> selectAttributes) {
+        if(selectAttributes == null || selectAttributes.isEmpty()) {
+            return false;
+        }
+        return selectAttributes.stream().findFirst().map(Attribute::isOnlyAttribute).orElse(false);
     }
 
     public Filter append(List<Attribute> selectAttributes) {
@@ -74,6 +81,11 @@ public class SelectFilter implements Filter, FilterVisitor {
          * value selected
          */
         private final String[] value;
+
+        /**
+         * only attribute
+         */
+        private final boolean onlyAttribute;
 
     }
 }

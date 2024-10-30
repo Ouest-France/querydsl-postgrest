@@ -27,7 +27,7 @@ public class FilterUtils {
             if(object != null) {
                 Select[] clazzAnnotation = object.getClass().getAnnotationsByType(Select.class);
                 if (clazzAnnotation.length > 0) {
-                    attributes.addAll(Arrays.stream(clazzAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value())).toList());
+                    attributes.addAll(Arrays.stream(clazzAnnotation).map(x -> new SelectFilter.Attribute(x.alias(), x.value(), x.only())).toList());
                 }
             }
         }
