@@ -30,9 +30,12 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
 
     private PostgrestRepository<Post> repository;
 
+    private PostgrestRepository<Post> repositoryLight;
+
     @BeforeEach
     void beforeEach() {
         repository = new PostRepository(webClient);
+        repositoryLight = new PostLightRepository(webClient);
     }
 
     @Test
@@ -86,6 +89,19 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertFalse(search.hasNext());
         assertNotNull(search.getPageable().previous());
         assertEquals(0, search.getPageable().previous().getPageNumber());
+    }
+
+    @Test
+    void shouldSearchWithLightRepository() {
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+        repositoryLight.search(new PostRequest(), Pageable.ofSize(10));
+
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        assertEquals("userId,id,title,body", queries.get("select").stream().findFirst().orElseThrow());
+
     }
 
     @Test
