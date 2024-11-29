@@ -5,7 +5,7 @@
         <groupId>fr.ouestfrance.querydsl</groupId>
         <artifactId>querydsl-postgrest-bom</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>1.4.7-SNAPSHOT</version>
+        <version>1.4.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>querydsl-postgrest-resttemplate-adapter</artifactId>
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
-            <version>6.1.12</version>
+            <version>6.1.15</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
