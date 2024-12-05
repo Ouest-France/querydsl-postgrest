@@ -6,23 +6,21 @@ import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.Page;
 import fr.ouestfrance.querydsl.postgrest.model.Pageable;
 import fr.ouestfrance.querydsl.postgrest.model.Range;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.reflect.TypeUtils;
 import org.junit.jupiter.api.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import shaded_package.org.apache.commons.io.IOUtils;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.nio.charset.Charset;
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static fr.ouestfrance.querydsl.postgrest.TestUtils.jsonFileResponse;
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,10 +31,10 @@ import static org.mockserver.model.HttpResponse.response;
 @Slf4j
 class PostgrestWebClientRepositoryTest {
 
-    private final PostgrestWebClient client = PostgrestWebClient.of(WebClient.builder()
+    private final PostgrestWebClient postgrestClient = PostgrestWebClient.of(WebClient.builder()
             .baseUrl("http://localhost:8007/")
             .build());
-    private final PostgrestRepository<Post> repository = new PostRepository(client);
+    private final PostgrestRepository<Post> repository = new PostRepository(postgrestClient);
 
 
     @Test
@@ -210,5 +208,21 @@ class PostgrestWebClientRepositoryTest {
         oldWayRangeRequest.setMaxSiblings(criteria.getSiblings().getUpper());
         Page<Post> oldWaySearch = repository.search(oldWayRangeRequest, Pageable.ofSize(6));
         assertNotNull(oldWaySearch);
+    }
+
+    @Test
+    void shouldEncodePlusChars(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts")
+                        .withQueryStringParameter("id", "eq.Romeo + Juliette")
+                        .withQueryStringParameter("select", "*,authors(*)"))
+                .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
+        Page<Post> search = repository.search(Criteria.byId("Romeo + Juliette"), Pageable.ofSize(6));
+        assertNotNull(search);
+
+        // assert uri
+        URI uri = postgrestClient.getUri("/posts", Map.of("id",
+                List.of("eq.Romeo + Juliette")), UriComponentsBuilder.newInstance().host("localhost").port(8007).scheme("http"));
+
+        assertEquals("http://localhost:8007/posts?id=eq.Romeo%20%2B%20Juliette", uri.toString());
     }
 }

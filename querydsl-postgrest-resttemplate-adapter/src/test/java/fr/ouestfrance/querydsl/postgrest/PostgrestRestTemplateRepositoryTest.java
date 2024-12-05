@@ -17,13 +17,17 @@ import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.model.MediaType;
+import org.mockserver.verify.Verification;
+import org.mockserver.verify.VerificationTimes;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import shaded_package.org.apache.commons.io.IOUtils;
 
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,13 +36,14 @@ class PostgrestRestTemplateRepositoryTest {
 
     private PostgrestRepository<Post> repository;
     private PostgrestRpcClient rpcClient;
+    private PostgrestRestTemplate postgrestRestTemplate;
 
     @BeforeEach
     void beforeEach(MockServerClient client) {
         client.reset();
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
-        PostgrestRestTemplate postgrestRestTemplate = PostgrestRestTemplate.of(restTemplate, "http://localhost:8007");
+        postgrestRestTemplate = PostgrestRestTemplate.of(restTemplate, "http://localhost:8007");
         repository = new PostRepository(postgrestRestTemplate);
         rpcClient = new PostgrestRpcClient(postgrestRestTemplate);
     }
@@ -210,6 +215,24 @@ class PostgrestRestTemplateRepositoryTest {
 
         Post[] result = rpcClient.executeRpc("testV1", null, Post[].class).orElse(null);
         assertNotNull(result);
+    }
+
+
+
+    @Test
+    void shouldEncodePlusChars(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/posts")
+                        .withQueryStringParameter("id", "eq.Romeo + Juliette")
+                        .withQueryStringParameter("select", "*,authors(*)"))
+                .respond(jsonFileResponse("posts.json").withHeader("Content-Range", "0-6/300"));
+        Page<Post> search = repository.search(Criteria.byId("Romeo + Juliette"), Pageable.ofSize(6));
+        assertNotNull(search);
+
+        // assert uri
+        URI uri = postgrestRestTemplate.getUri("/posts", Map.of("id",
+                List.of("eq.Romeo + Juliette")));
+
+        assertEquals("http://localhost:8007/posts?id=eq.Romeo%20%2B%20Juliette", uri.toString());
     }
 
     private HttpResponse jsonResponse(String content) {

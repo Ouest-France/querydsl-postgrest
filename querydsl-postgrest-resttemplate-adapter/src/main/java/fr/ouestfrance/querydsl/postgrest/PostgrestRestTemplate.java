@@ -57,8 +57,9 @@ public class PostgrestRestTemplate implements PostgrestClient {
     @Override
     public <T> RangeResponse<T> search(String resource, Map<String, List<String>> params,
                                        Map<String, List<String>> headers, Class<T> clazz) {
+        URI uri = getUri(resource, params);
         ResponseEntity<List<T>> response = restTemplate.exchange(
-                getUri(resource, params), HttpMethod.GET,
+                uri, HttpMethod.GET,
                 new HttpEntity<>(null, toHeaders(headers)), listRef(clazz));
 
         // Retrieve result headers
@@ -140,12 +141,13 @@ public class PostgrestRestTemplate implements PostgrestClient {
      * @param params   params
      * @return URI
      */
-    private URI getUri(String resource, Map<String, List<String>> params) {
+    protected URI getUri(String resource, Map<String, List<String>> params) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseUrl).path(resource);
         if (Objects.nonNull(params)) {
             uriBuilder = uriBuilder.queryParams(toMultiMap(params));
         }
-        return uriBuilder.build().encode().toUri();
+        URI uri = uriBuilder.build().encode().toUri();
+        return URI.create(uri.toASCIIString().replace("+", "%2B"));
     }
 
 }
