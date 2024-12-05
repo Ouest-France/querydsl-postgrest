@@ -18,9 +18,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriBuilder;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,11 +59,7 @@ public class PostgrestWebClient implements PostgrestClient {
     @Override
     public <T> RangeResponse<T> search(String resource, Map<String, List<String>> params,
                                        Map<String, List<String>> headers, Class<T> clazz) {
-        ResponseEntity<List<T>> response = webClient.get().uri(uriBuilder -> {
-                    uriBuilder.path(resource);
-                    uriBuilder.queryParams(toMultiMap(params));
-                    return uriBuilder.build();
-                }).headers(httpHeaders ->
+        ResponseEntity<List<T>> response = webClient.get().uri(uriBuilder -> getUri(resource, params, uriBuilder)).headers(httpHeaders ->
                         safeAdd(headers, httpHeaders)
                 )
                 .retrieve()
@@ -77,13 +75,11 @@ public class PostgrestWebClient implements PostgrestClient {
                 }).orElse(new RangeResponse<>(List.of(), null));
     }
 
+
+
     @Override
     public List<CountItem> count(String resource, Map<String, List<String>> params) {
-        ResponseEntity<List<CountItem>> response = webClient.get().uri(uriBuilder -> {
-                    uriBuilder.path(resource);
-                    uriBuilder.queryParams(toMultiMap(params));
-                    return uriBuilder.build();
-                })
+        ResponseEntity<List<CountItem>> response = webClient.get().uri(uriBuilder -> getUri(resource, params, uriBuilder))
                 .retrieve()
                 .toEntity(listRef(CountItem.class))
                 .block();
@@ -92,11 +88,7 @@ public class PostgrestWebClient implements PostgrestClient {
 
     @Override
     public <V> V rpc(String rpcName, Map<String, List<String>> params, Object body, Type clazz) {
-        WebClient.RequestBodySpec request = webClient.post().uri(uriBuilder -> {
-            uriBuilder.path(rpcName);
-            uriBuilder.queryParams(toMultiMap(params));
-            return uriBuilder.build();
-        });
+        WebClient.RequestBodySpec request = webClient.post().uri(uriBuilder -> getUri(rpcName, params, uriBuilder));
         Optional.ofNullable(body).ifPresent(request::bodyValue);
         Object result = request
                 .retrieve()
@@ -113,11 +105,7 @@ public class PostgrestWebClient implements PostgrestClient {
 
     @Override
     public <T> BulkResponse<T> post(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
-        ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> {
-                    uriBuilder.path(resource);
-                    uriBuilder.queryParams(toMultiMap(params));
-                    return uriBuilder.build();
-                }).headers(httpHeaders -> safeAdd(headers, httpHeaders))
+        ResponseEntity<List<T>> response = webClient.post().uri(uriBuilder -> getUri(resource, params, uriBuilder)).headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .bodyValue(value)
                 .retrieve()
                 .toEntity(listRef(clazz))
@@ -128,11 +116,7 @@ public class PostgrestWebClient implements PostgrestClient {
 
     @Override
     public <T> BulkResponse<T> patch(String resource, Map<String, List<String>> params, Object value, Map<String, List<String>> headers, Class<T> clazz) {
-        ResponseEntity<List<T>> response = webClient.patch().uri(uriBuilder -> {
-                    uriBuilder.path(resource);
-                    uriBuilder.queryParams(toMultiMap(params));
-                    return uriBuilder.build();
-                })
+        ResponseEntity<List<T>> response = webClient.patch().uri(uriBuilder -> getUri(resource, params, uriBuilder))
                 .bodyValue(value)
                 .headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
@@ -142,17 +126,19 @@ public class PostgrestWebClient implements PostgrestClient {
 
     @Override
     public <T> BulkResponse<T> delete(String resource, Map<String, List<String>> params, Map<String, List<String>> headers, Class<T> clazz) {
-        ResponseEntity<List<T>> response = webClient.delete().uri(uriBuilder -> {
-                    uriBuilder.path(resource);
-                    uriBuilder.queryParams(toMultiMap(params));
-                    return uriBuilder.build();
-                })
+        ResponseEntity<List<T>> response = webClient.delete().uri(uriBuilder -> getUri(resource, params, uriBuilder))
                 .headers(httpHeaders -> safeAdd(headers, httpHeaders))
                 .retrieve()
                 .toEntity(listRef(clazz)).block();
         return toBulkResponse(response);
     }
 
+
+    protected  URI getUri(String resource, Map<String, List<String>> params, UriBuilder uriBuilder) {
+        uriBuilder.path(resource);
+        uriBuilder.queryParams(toMultiMap(params));
+        return URI.create(uriBuilder.build().toASCIIString().replace("+", "%2B"));
+    }
 
     /**
      * Convert map to MultiValueMap
