@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -75,7 +76,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertEquals("like.Test*", queries.get("title").stream().findFirst().orElseThrow());
         assertEquals("id,title.desc.nullsfirst,author.nullslast", queries.get("order").stream().findFirst().orElseThrow());
         assertEquals("*,authors(*)", queries.get("select").stream().findFirst().orElseThrow());
-        assertEquals(2, queries.get("status").size());
+        assertEquals(1, queries.get("status").size());
         // Assert headers captors
         Map<String, List<String>> value = headerArgs.getValue();
         assertEquals("0-9", value.get("Range").stream().findFirst().orElseThrow());
@@ -89,6 +90,41 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertFalse(search.hasNext());
         assertNotNull(search.getPageable().previous());
         assertEquals(0, search.getPageable().previous().getPageNumber());
+    }
+
+    @Test
+    void shouldSearchWithSortOnly() {
+        PostRequest request = new PostRequest();
+        request.setTitle("Test*");
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.sorted(Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title"))));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertEquals("id,title.desc", String.join("", queries.get("order")));
+    }
+
+    @Test
+    void shouldSearchWithSortAndLimit() {
+        PostRequest request = new PostRequest();
+        request.setTitle("Test*");
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.limitAndSorted(2000,Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title"))));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertEquals("id,title.desc", String.join("", queries.get("order")));
+        assertEquals("2000", queries.get("limit").stream().findFirst().orElseThrow());
     }
 
     @Test
@@ -253,7 +289,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setSize("25");
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
-        Page<Post> search = repository.search(request, Pageable.unPaged());
+        Page<Post> search = repository.search(request, Pageable.unpaged());
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors

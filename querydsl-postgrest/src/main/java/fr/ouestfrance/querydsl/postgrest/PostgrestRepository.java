@@ -7,6 +7,7 @@ import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.MissingConfigurationException;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import fr.ouestfrance.querydsl.postgrest.model.impl.CountFilter;
+import fr.ouestfrance.querydsl.postgrest.model.impl.LimitFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.OrderFilter;
 import fr.ouestfrance.querydsl.postgrest.model.impl.SelectFilter;
 import fr.ouestfrance.querydsl.postgrest.services.BulkExecutorService;
@@ -69,9 +70,11 @@ public class PostgrestRepository<T> implements Repository<T> {
         List<Filter> queryParams = processorService.process(criteria);
         Map<String, List<String>> headers = headerMap(Header.Method.GET);
         // Add pageable if present
-        if (pageable.getPageSize() > 0) {
+        if (pageable.getPageSize() > 0 && pageable.getPageNumber() >= 0) {
             headers.put("Range-Unit", List.of("items"));
             headers.put("Range", List.of(pageable.toRange()));
+        }else if(pageable.getPageSize() > 0) {
+            queryParams.add(LimitFilter.of(pageable.getPageSize()));
         }
         headers.computeIfAbsent(Prefer.HEADER, x -> new ArrayList<>())
                 .add("count=" + annotation.countStrategy().name().toLowerCase());

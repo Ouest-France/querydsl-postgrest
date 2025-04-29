@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 public interface Page<T> extends Iterable<T> {
 
     /**
-     * Create simple page from items
+     * Create a simple page from items
      *
      * @param items items
      * @param <T>   type of items
@@ -23,7 +23,7 @@ public interface Page<T> extends Iterable<T> {
      */
     @SafeVarargs
     static <T> Page<T> of(T... items) {
-        return new PageImpl<>(Arrays.asList(items), Pageable.unPaged(), items.length, 1);
+        return new PageImpl<>(Arrays.asList(items), Pageable.unpaged(), items.length, 1);
     }
 
     /**
@@ -33,7 +33,7 @@ public interface Page<T> extends Iterable<T> {
      * @return empty page
      */
     static <T> Page<T> empty() {
-        return new PageImpl<>(List.of(), Pageable.unPaged(), 0, 0);
+        return new PageImpl<>(List.of(), Pageable.unpaged(), 0, 0);
     }
 
     /**
@@ -99,11 +99,15 @@ public interface Page<T> extends Iterable<T> {
     }
 
     /**
-     * Check that page has next page
+     * Check that page has next
      *
      * @return true if totalPages is greater than pageNumber
      */
     default boolean hasNext() {
-        return getPageable().getPageNumber() + 1 < getTotalPages();
+        int pageNumber = getPageable().getPageNumber();
+        if(pageNumber < 0) {
+            pageNumber = 0;
+        }
+        return pageNumber + 1 < getTotalPages();
     }
 }

@@ -31,7 +31,7 @@ public interface Pageable {
      * Create a simple pageRequest with page number and size and declarative sort
      *
      * @param pageNumber number of the request
-     * @param pageSize   number of element in one page
+     * @param pageSize   number of elements in one page
      * @param sort       sort information
      * @return pageable object
      */
@@ -40,12 +40,42 @@ public interface Pageable {
     }
 
     /**
-     * Create an un paged
+     * Create unpaged
      *
      * @return pageable object
      */
-    static Pageable unPaged() {
-        return new PageRequest(0, 0, null);
+    static Pageable unpaged() {
+        return limitAndSorted(0, null);
+    }
+
+
+    /**
+     * Create unpaged with sort only
+     * @param sort sort information
+     * @return pageable object
+     */
+    static Pageable sorted(Sort sort) {
+        return limitAndSorted(0, sort);
+    }
+
+
+
+    /**
+     * Create unpaged with size only
+     * @return pageable object ordered by size
+     */
+    static Pageable limit(int size) {
+        return limitAndSorted(size, null);
+    }
+
+    /**
+     * Create unpaged with sort only
+     * @param size size number of items to return
+     * @param sort sort information
+     * @return pageable object ordered by sort
+     */
+    static Pageable limitAndSorted(int size, Sort sort) {
+        return new PageRequest(-1, size, sort);
     }
 
     /**
