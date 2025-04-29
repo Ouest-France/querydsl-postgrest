@@ -73,7 +73,8 @@ public class PostgrestRepository<T> implements Repository<T> {
         if (pageable.getPageSize() > 0 && pageable.getPageNumber() >= 0) {
             headers.put("Range-Unit", List.of("items"));
             headers.put("Range", List.of(pageable.toRange()));
-        }else if(pageable.getPageSize() > 0) {
+        } else if (pageable.getPageSize() > 0) {
+            // If only page size, then add limit query param
             queryParams.add(LimitFilter.of(pageable.getPageSize()));
         }
         headers.computeIfAbsent(Prefer.HEADER, x -> new ArrayList<>())
@@ -133,6 +134,7 @@ public class PostgrestRepository<T> implements Repository<T> {
 
     /**
      * Retrieve on conflict query params
+     *
      * @return map of query params for on conflict if annotation OnConflict is present otherwise empty map
      */
     private Map<String, List<String>> getUpsertQueryParams() {
@@ -145,6 +147,7 @@ public class PostgrestRepository<T> implements Repository<T> {
 
     /**
      * Retrieve header map for upsert
+     *
      * @return map of headers for upsert
      */
     private Map<String, List<String>> getUpsertHeaderMap() {
