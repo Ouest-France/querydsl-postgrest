@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -124,6 +123,24 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         Map<String, List<String>> queries = queryArgs.getValue();
         log.info("queries {}", queries);
         assertEquals("id,title.desc", String.join("", queries.get("order")));
+        assertEquals("2000", queries.get("limit").stream().findFirst().orElseThrow());
+    }
+
+    @Test
+    void shouldSearchWithLimit() {
+        PostRequest request = new PostRequest();
+        request.setTitle("Test*");
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.limit(2000));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertNull(queries.get("order"));
         assertEquals("2000", queries.get("limit").stream().findFirst().orElseThrow());
     }
 
@@ -289,7 +306,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         request.setSize("25");
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         when(webClient.search(anyString(), queryArgs.capture(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
-        Page<Post> search = repository.search(request, Pageable.unpaged());
+        Page<Post> search = repository.search(request, Pageable.unPaged());
         assertNotNull(search);
         assertEquals(2, search.size());
         // Assert query captors

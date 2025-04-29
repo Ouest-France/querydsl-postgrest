@@ -23,7 +23,7 @@ public interface Repository<T> {
      * @return page result
      */
     default Page<T> search(Object criteria) {
-        return search(criteria, Pageable.unpaged());
+        return search(criteria, Pageable.unPaged());
     }
 
 

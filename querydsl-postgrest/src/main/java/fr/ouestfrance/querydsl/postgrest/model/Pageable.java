@@ -44,7 +44,7 @@ public interface Pageable {
      *
      * @return pageable object
      */
-    static Pageable unpaged() {
+    static Pageable unPaged() {
         return limitAndSorted(0, null);
     }
 
