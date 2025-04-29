@@ -75,7 +75,7 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertEquals("like.Test*", queries.get("title").stream().findFirst().orElseThrow());
         assertEquals("id,title.desc.nullsfirst,author.nullslast", queries.get("order").stream().findFirst().orElseThrow());
         assertEquals("*,authors(*)", queries.get("select").stream().findFirst().orElseThrow());
-        assertEquals(1, queries.get("status").size());
+        assertEquals(2, queries.get("status").size());
         // Assert headers captors
         Map<String, List<String>> value = headerArgs.getValue();
         assertEquals("0-9", value.get("Range").stream().findFirst().orElseThrow());

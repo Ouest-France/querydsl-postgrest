@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Order filter allow to describe a pagination sort
+ * Limit filter allows to describe simple limit search
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

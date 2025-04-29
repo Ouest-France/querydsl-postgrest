@@ -31,7 +31,7 @@ public class PostRequest {
 
     @FilterField(operation = FilterOperation.IN.class, key = "status")
     private List<String> codes;
-    @FilterField(operation = FilterOperation.NOTIN.class, key = "titres.produits.uuid")
+    @FilterField(operation = FilterOperation.NOTIN.class, key = "status")
     private List<String> excludes;
 
 }
