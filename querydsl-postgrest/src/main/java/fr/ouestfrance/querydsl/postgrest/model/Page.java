@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 public interface Page<T> extends Iterable<T> {
 
     /**
-     * Create simple page from items
+     * Create a simple page from items
      *
      * @param items items
      * @param <T>   type of items
@@ -99,11 +99,15 @@ public interface Page<T> extends Iterable<T> {
     }
 
     /**
-     * Check that page has next page
+     * Check that page has next
      *
      * @return true if totalPages is greater than pageNumber
      */
     default boolean hasNext() {
-        return getPageable().getPageNumber() + 1 < getTotalPages();
+        int pageNumber = getPageable().getPageNumber();
+        if(pageNumber < 0) {
+            pageNumber = 0;
+        }
+        return pageNumber + 1 < getTotalPages();
     }
 }

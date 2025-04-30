@@ -50,6 +50,14 @@ public final class QueryFilterVisitor {
                 })).collect(Collectors.joining(COMA)));
     }
 
+
+    /**
+     * Transform a Filter to Query
+     * @param filter filter
+     */
+    public void visit(LimitFilter filter) {
+        builder.append(filter.getLimit());
+    }
     /**
      * Transform a Select filter to Query
      *

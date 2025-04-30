@@ -92,6 +92,59 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
     }
 
     @Test
+    void shouldSearchWithSortOnly() {
+        PostRequest request = new PostRequest();
+        request.setTitle("Test*");
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.sorted(Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title"))));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertEquals("id,title.desc", String.join("", queries.get("order")));
+    }
+
+    @Test
+    void shouldSearchWithSortAndLimit() {
+        PostRequest request = new PostRequest();
+        request.setTitle("Test*");
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.limitAndSorted(2000,Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title"))));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertEquals("id,title.desc", String.join("", queries.get("order")));
+        assertEquals("2000", queries.get("limit").stream().findFirst().orElseThrow());
+    }
+
+    @Test
+    void shouldSearchWithLimit() {
+        PostRequest request = new PostRequest();
+        request.setTitle("Test*");
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Page<Post> search = repository.search(request, Pageable.limit(2000));
+        assertNotNull(search);
+        assertEquals(2, search.size());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertNull(queries.get("order"));
+        assertEquals("2000", queries.get("limit").stream().findFirst().orElseThrow());
+    }
+
+    @Test
     void shouldSearchWithLightRepository() {
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
         ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
