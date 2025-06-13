@@ -133,6 +133,53 @@ public class PostgrestRepository<T> implements Repository<T> {
     }
 
     /**
+     * Search from criteria object dealing with Postrest pagination to dump all matching datas
+     *
+     * @param criteria search criteria
+     * @param sort     sort information
+     * @return list result
+     */
+    public List<T> searchAll(Object criteria, Sort sort) {
+        Pageable firstPageable = Pageable.sorted(sort);
+        Page<T> pageResult = null;
+        List<T> result = new ArrayList<>();
+        do {
+            pageResult = search(criteria, nextPageable(pageResult, firstPageable));
+            result.addAll(pageResult.getData());
+        } while (pageResult.hasNext());
+        return result;
+    }
+
+    /**
+     * Give the next pageable of a page if exists.
+     * Otherwise the unpoged argument.
+     *
+     * @param page    last call result
+     * @param unpaged unpaged pageable object
+     * @return pageable object
+     */
+    private Pageable nextPageable(Page<?> page, Pageable unpaged) {
+        return Optional.ofNullable(page)
+                .map(this::getNextPageable)
+                .orElse(unpaged);
+    }
+
+    /**
+     * Give the next pageable of a page dealing with requested unpaged for iterative calls.
+     * Because an unpaged page number is -1 and an unpaged size is 0.
+     *
+     * @param page last call result
+     * @return pageable object
+     */
+    private Pageable getNextPageable(Page<?> page) {
+        return Pageable.ofSize(
+                Math.max(page.getPageable().getPageNumber(), 0) + 1,
+                Math.max(page.size(), page.getPageable().getPageSize()),
+                page.getPageable().getSort()
+        );
+    }
+
+    /**
      * Retrieve on conflict query params
      *
      * @return map of query params for on conflict if annotation OnConflict is present otherwise empty map
