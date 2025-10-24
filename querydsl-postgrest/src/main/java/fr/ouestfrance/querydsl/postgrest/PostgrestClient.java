@@ -1,7 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 
 import java.lang.reflect.Type;
@@ -68,9 +67,9 @@ public interface PostgrestClient {
      *
      * @param resource resource name
      * @param map      query params
-     * @return list of count items
+     * @return the total number of elements
      */
-    List<CountItem> count(String resource, Map<String, List<String>> map);
+    long count(String resource, Map<String, List<String>> map);
 
     /**
      * Call RPC

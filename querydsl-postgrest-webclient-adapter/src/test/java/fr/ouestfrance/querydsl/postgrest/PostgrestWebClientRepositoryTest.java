@@ -12,8 +12,8 @@ import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -40,10 +40,49 @@ class PostgrestWebClientRepositoryTest {
     @Test
     void shouldCountPosts(ClientAndServer client) {
         client.reset();
-        client.when(request().withPath("/posts").withQueryStringParameter("select", "count()"))
-                .respond(jsonFileResponse("count_response.json"));
+
+        HttpResponse response = response().withHeader("Content-Range", "0-9/300");
+
+        client.when(request().withPath("/posts")
+                        .withHeader("Range-Unit", "items")
+                        .withHeader("Prefer", "count=exact")
+                )
+                .respond(response);
         long count = repository.count();
         assertEquals(300, count);
+        client.reset();
+    }
+
+    @Test
+    void shouldCountFewPost(ClientAndServer client) {
+        client.reset();
+
+        HttpResponse response = response().withHeader("Content-Range", "0-0/3");
+
+        client.when(request().withPath("/posts")
+                        .withHeader("Range-Unit", "items")
+                        .withHeader("Prefer", "count=exact")
+                )
+                .respond(response);
+        long count = repository.count();
+        assertEquals(3, count);
+        client.reset();
+    }
+
+    @Test
+    void shouldCountNoPost(ClientAndServer client) {
+        client.reset();
+
+        HttpResponse response = response().withHeader("Content-Range", "*/0");
+
+        client.when(request().withPath("/posts")
+                        .withHeader("Range-Unit", "items")
+                        .withHeader("Prefer", "count=exact")
+                )
+                .respond(response);
+        long count = repository.count();
+        assertEquals(0, count);
+        client.reset();
     }
 
     @Test
