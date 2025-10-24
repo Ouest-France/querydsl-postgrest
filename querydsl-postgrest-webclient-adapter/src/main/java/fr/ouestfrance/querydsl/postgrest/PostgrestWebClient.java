@@ -1,7 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
@@ -14,13 +13,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.util.UriBuilder;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.List;
@@ -75,15 +71,22 @@ public class PostgrestWebClient implements PostgrestClient {
                 }).orElse(new RangeResponse<>(List.of(), null));
     }
 
-
-
     @Override
-    public List<CountItem> count(String resource, Map<String, List<String>> params) {
-        ResponseEntity<List<CountItem>> response = webClient.get().uri(uriBuilder -> getUri(resource, params, uriBuilder))
+    public long count(String resource, Map<String, List<String>> params) {
+        ResponseEntity<Void> response = webClient.head()
+                .uri(uriBuilder -> getUri(resource, params, uriBuilder))
+                .header("Range-Unit", "items")
+                .header("Prefer", "count=exact")
                 .retrieve()
-                .toEntity(listRef(CountItem.class))
+                .toBodilessEntity()
                 .block();
-        return Optional.ofNullable(response).map(HttpEntity::getBody).orElse(List.of());
+
+        return Optional.ofNullable(response)
+                .map(ResponseEntity::getHeaders)
+                .flatMap(ResponseUtils::getCount)
+                .map(HeaderRange::getTotalElements)
+                .orElse(-1L);
+
     }
 
     @Override

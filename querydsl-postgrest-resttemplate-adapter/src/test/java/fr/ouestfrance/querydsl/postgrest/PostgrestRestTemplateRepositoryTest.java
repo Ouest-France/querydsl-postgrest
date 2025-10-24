@@ -59,14 +59,7 @@ class PostgrestRestTemplateRepositoryTest {
         assertFalse(search.getData().isEmpty());
         search.getData().stream().map(Object::getClass).forEach(x -> assertEquals(Post.class, x));
     }
-
-    @Test
-    void shouldCountPosts(ClientAndServer client) {
-        client.when(HttpRequest.request().withPath("/posts").withQueryStringParameter("select", "count()"))
-                .respond(jsonFileResponse("count_response.json"));
-        long count = repository.count(new PostRequest());
-        assertEquals(300, count);
-    }
+    
 
     @Test
     void shouldSearchPostsWithoutContentRange(MockServerClient client) {

@@ -1,7 +1,6 @@
 package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
@@ -15,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -97,9 +94,18 @@ public class PostgrestRestTemplate implements PostgrestClient {
     }
 
     @Override
-    public List<CountItem> count(String resource, Map<String, List<String>> map) {
-        return restTemplate.exchange(
-                getUri(resource, map), HttpMethod.GET, new HttpEntity<>(null, new HttpHeaders()), listRef(CountItem.class)).getBody();
+    public long count(String resource, Map<String, List<String>> map) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Range-Unit", "items");
+        headers.set("Prefer", "count=exact");
+
+        HttpHeaders headersResponse = restTemplate.exchange(
+                getUri(resource, map), HttpMethod.HEAD, new HttpEntity<>(null, headers), Void.class).getHeaders();
+
+        return ResponseUtils.getCount(headersResponse)
+                .map(HeaderRange::getTotalElements)
+                .orElse(-1L);
     }
 
     @Override

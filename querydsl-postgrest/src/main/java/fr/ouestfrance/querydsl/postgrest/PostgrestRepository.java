@@ -100,9 +100,7 @@ public class PostgrestRepository<T> implements Repository<T> {
     public long count(Object criteria) {
         List<Filter> queryParams = processorService.process(criteria);
         queryParams.add(CountFilter.of());
-        List<CountItem> response = client.count(annotation.resource(), toMap(queryParams));
-        // Retrieve result headers
-        return response.stream().findFirst().map(x -> x.get("count")).map(Long::valueOf).orElse(0L);
+        return client.count(annotation.resource(), toMap(queryParams));
     }
 
 

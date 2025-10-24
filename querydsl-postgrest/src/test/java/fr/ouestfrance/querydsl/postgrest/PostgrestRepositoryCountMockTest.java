@@ -4,7 +4,6 @@ import fr.ouestfrance.querydsl.postgrest.app.Post;
 import fr.ouestfrance.querydsl.postgrest.app.PostRepository;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequest;
 import fr.ouestfrance.querydsl.postgrest.app.PostRequestWithSize;
-import fr.ouestfrance.querydsl.postgrest.model.CountItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -35,7 +34,7 @@ class PostgrestRepositoryCountMockTest extends AbstractRepositoryMockTest {
 
     @Test
     void shouldCountWithoutCriteriaOrNull() {
-        when(postgrestClient.count(anyString(), any())).thenReturn(List.of(CountItem.of(1)));
+        when(postgrestClient.count(anyString(), any())).thenReturn(1L);
         assertEquals(1, repository.count(null));
         assertEquals(1, repository.count());
     }
@@ -50,7 +49,7 @@ class PostgrestRepositoryCountMockTest extends AbstractRepositoryMockTest {
         request.setExcludes(List.of("z"));
         request.setValidDate(LocalDate.of(2023, 11, 10));
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(postgrestClient.count(anyString(), queryArgs.capture())).thenReturn(List.of(CountItem.of(1)));
+        when(postgrestClient.count(anyString(), queryArgs.capture())).thenReturn(1L);
 
         assertEquals(1, repository.count(request));
         Map<String, List<String>> queries = queryArgs.getValue();
@@ -67,7 +66,7 @@ class PostgrestRepositoryCountMockTest extends AbstractRepositoryMockTest {
         PostRequestWithSize request = new PostRequestWithSize();
         request.setSize("25");
         ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
-        when(postgrestClient.count(anyString(), queryArgs.capture())).thenReturn(List.of(CountItem.of(1)));
+        when(postgrestClient.count(anyString(), queryArgs.capture())).thenReturn(1L);
         assertEquals(1, repository.count(request));
         Map<String, List<String>> queries = queryArgs.getValue();
         assertEquals(1, queries.get("select").size());
