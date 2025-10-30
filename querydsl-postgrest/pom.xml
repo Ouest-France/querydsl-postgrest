@@ -7,7 +7,7 @@
         <relativePath>../pom.xml</relativePath>
         <version>1.4.10-SNAPSHOT</version>
     </parent>
-
+    <name>querydsl-postgrest</name>
     <artifactId>querydsl-postgrest</artifactId>
     <dependencies>
         <dependency>
