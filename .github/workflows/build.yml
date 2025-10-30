@@ -37,6 +37,6 @@ jobs:
       - name: Prepare Settings
         uses: whelk-io/maven-settings-xml-action@v22
         with:
-          servers: '[{ "id": "central", "username": ${{ secrets.OSSRH_USERNAME }}, "password": ${{ secrets.OSSRH_TOKEN }} }]'
+          servers: '[{ "id": "central", "username": "${{ secrets.OSSRH_USERNAME }}", "password": "${{ secrets.OSSRH_TOKEN }}" }]'
       - name: Deploy Snapshot
         run: mvn -ntp -B deploy -DskipTests=true
