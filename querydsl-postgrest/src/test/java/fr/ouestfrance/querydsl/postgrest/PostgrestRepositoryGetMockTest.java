@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -380,4 +381,76 @@ class PostgrestRepositoryGetMockTest extends AbstractRepositoryMockTest {
         assertEquals("lte.3", queries.get("siblings").get(1));
     }
 
+    @Test
+    void shouldSearchAsStreamAllPosts() {
+        when(webClient.search(anyString(), any(), any(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+        Stream<Post> search = repository.searchAsStream(null);
+        assertNotNull(search);
+        assertEquals(2, search.count());
+    }
+
+    @Test
+    void shouldSearchAsStreamWithPageSizeAndSort() {
+        PostRequest request = new PostRequest();
+        request.setUserId(1);
+        request.setId(1);
+        request.setTitle("Test*");
+        request.setCodes(List.of("a", "b", "c"));
+        request.setExcludes(List.of("z"));
+        request.setValidDate(LocalDate.of(2023, 11, 10));
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Stream<Post> search = repository.searchAsStream(request, 10, Sort.by(Sort.Order.asc("id"), Sort.Order.desc("title").nullsFirst(), Sort.Order.asc("author").nullsLast()));
+        assertNotNull(search);
+        assertEquals(2, search.count());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertEquals("eq.1", queries.get("userId").stream().findFirst().orElseThrow());
+        assertEquals("neq.1", queries.get("id").stream().findFirst().orElseThrow());
+        assertEquals("lte.2023-11-10", queries.get("startDate").stream().findFirst().orElseThrow());
+        assertEquals("(endDate.gte.2023-11-10,endDate.is.null)", queries.get("or").stream().findFirst().orElseThrow());
+        assertEquals("like.Test*", queries.get("title").stream().findFirst().orElseThrow());
+        assertEquals("id,title.desc.nullsfirst,author.nullslast", queries.get("order").stream().findFirst().orElseThrow());
+        assertEquals("*,authors(*)", queries.get("select").stream().findFirst().orElseThrow());
+        assertEquals(2, queries.get("status").size());
+        // Assert headers captors
+        Map<String, List<String>> value = headerArgs.getValue();
+        assertEquals("0-9", value.get("Range").stream().findFirst().orElseThrow());
+        assertEquals("items", value.get("Range-Unit").stream().findFirst().orElseThrow());
+    }
+
+    @Test
+    void shouldSearchAsStreamWithoutPageSizeAndSort() {
+        PostRequest request = new PostRequest();
+        request.setUserId(1);
+        request.setId(1);
+        request.setTitle("Test*");
+        request.setCodes(List.of("a", "b", "c"));
+        request.setExcludes(List.of("z"));
+        request.setValidDate(LocalDate.of(2023, 11, 10));
+        ArgumentCaptor<Map<String, List<String>>> queryArgs = multiMapCaptor();
+        ArgumentCaptor<Map<String, List<String>>> headerArgs = multiMapCaptor();
+        when(webClient.search(anyString(), queryArgs.capture(), headerArgs.capture(), eq(Post.class))).thenReturn(RangeResponse.of(new Post(), new Post()));
+
+        Stream<Post> search = repository.searchAsStream(request);
+        assertNotNull(search);
+        assertEquals(2, search.count());
+        // Assert query captors
+        Map<String, List<String>> queries = queryArgs.getValue();
+        log.info("queries {}", queries);
+        assertEquals("eq.1", queries.get("userId").stream().findFirst().orElseThrow());
+        assertEquals("neq.1", queries.get("id").stream().findFirst().orElseThrow());
+        assertEquals("lte.2023-11-10", queries.get("startDate").stream().findFirst().orElseThrow());
+        assertEquals("(endDate.gte.2023-11-10,endDate.is.null)", queries.get("or").stream().findFirst().orElseThrow());
+        assertEquals("like.Test*", queries.get("title").stream().findFirst().orElseThrow());
+        assertEquals("*,authors(*)", queries.get("select").stream().findFirst().orElseThrow());
+        assertEquals(2, queries.get("status").size());
+        // Assert headers captors
+        Map<String, List<String>> value = headerArgs.getValue();
+        assertEquals("0-999", value.get("Range").stream().findFirst().orElseThrow());
+        assertEquals("items", value.get("Range-Unit").stream().findFirst().orElseThrow());
+    }
 }

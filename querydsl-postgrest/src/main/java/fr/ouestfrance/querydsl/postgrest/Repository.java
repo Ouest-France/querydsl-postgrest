@@ -1,13 +1,11 @@
 package fr.ouestfrance.querydsl.postgrest;
 
-import fr.ouestfrance.querydsl.postgrest.model.BulkOptions;
-import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
-import fr.ouestfrance.querydsl.postgrest.model.Page;
-import fr.ouestfrance.querydsl.postgrest.model.Pageable;
+import fr.ouestfrance.querydsl.postgrest.model.*;
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Repository interface
@@ -26,6 +24,15 @@ public interface Repository<T> {
         return search(criteria, Pageable.unPaged());
     }
 
+    /**
+     * Search from criteria object as stream
+     *
+     * @param criteria search criteria
+     * @return stream result
+     */
+    default Stream<T> searchAsStream(Object criteria) {
+        return searchAsStream(criteria, 0, null);
+    }
 
     /**
      * Count all items
@@ -52,6 +59,16 @@ public interface Repository<T> {
      * @return page result
      */
     Page<T> search(Object criteria, Pageable pageable);
+
+    /**
+     * Search from criteria object as lazy stream
+     *
+     * @param criteria search criteria
+     * @param pageSize page size (default 1000)
+     * @param sort     sort
+     * @return stream result
+     */
+    Stream<T> searchAsStream(Object criteria, int pageSize, Sort sort);
 
     /**
      * Find one object using criteria, method can return one or empty
@@ -177,6 +194,4 @@ public interface Repository<T> {
      * @return list of deleted items
      */
     BulkResponse<T> delete(Object criteria, BulkOptions options);
-
-
 }
