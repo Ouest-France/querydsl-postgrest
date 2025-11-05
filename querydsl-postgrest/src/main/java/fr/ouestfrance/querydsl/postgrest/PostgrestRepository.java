@@ -17,8 +17,11 @@ import fr.ouestfrance.querydsl.service.ext.QueryDslProcessorService;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.*;
+import static fr.ouestfrance.querydsl.postgrest.model.PageRequests.DEFAULT_PAGE_SIZE;
 import static fr.ouestfrance.querydsl.postgrest.utils.FilterUtils.toMap;
 
 /**
@@ -93,6 +96,12 @@ public class PostgrestRepository<T> implements Repository<T> {
                 .orElse(response.getPageSize());
         // Compute PageResponse
         return new PageImpl<>(response.data(), pageable, response.getTotalElements(), (int) Math.ceil((double) response.getTotalElements() / pageSize));
+    }
+
+    @Override
+    public Stream<T> searchAsStream(Object criteria, int pageSize, Sort sort) {
+        Function<PageRequest, Page<T>> function = pageRequest -> search(criteria, pageRequest);
+        return PageRequests.collect(function, new PageCollector.PageCollectorOptions(pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE, sort)).toStream();
     }
 
 
