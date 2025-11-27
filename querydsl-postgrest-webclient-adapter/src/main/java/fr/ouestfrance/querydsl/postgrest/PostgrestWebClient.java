@@ -21,6 +21,7 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static fr.ouestfrance.querydsl.postgrest.ParametrizedTypeUtils.listRef;
@@ -160,8 +161,9 @@ public class PostgrestWebClient implements PostgrestClient {
      * @param httpHeaders httpHeaders
      */
     private static void safeAdd(Map<String, List<String>> headers, HttpHeaders httpHeaders) {
-        Optional.ofNullable(headers)
-                .map(PostgrestWebClient::toMultiMap).ifPresent(httpHeaders::addAll);
+        if (headers != null) {
+            headers.forEach(httpHeaders::put);
+        }
         // Add contentType with default on call if webclient default is not set
         httpHeaders.put(CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON_VALUE));
     }

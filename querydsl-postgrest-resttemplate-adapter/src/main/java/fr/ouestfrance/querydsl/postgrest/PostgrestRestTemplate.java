@@ -137,7 +137,11 @@ public class PostgrestRestTemplate implements PostgrestClient {
      * @return HttpHeaders
      */
     private static HttpHeaders toHeaders(Map<String, List<String>> headers) {
-        return new HttpHeaders(toMultiMap(headers));
+        HttpHeaders httpHeaders = new HttpHeaders();
+        if (headers != null) {
+            headers.forEach(httpHeaders::put);
+        }
+        return httpHeaders;
     }
 
     /**
