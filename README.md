@@ -357,11 +357,24 @@ public class PostRequestWithAuthorOrSubject {
 
 extends FilterOperation with
 
-| Operator | Description                       |
-|----------|-----------------------------------|
-| ILIKE    | Case-insensitive LIKE             |  
-| CS       | Contains for JSON/Range datatype  |
-| CD       | Contained for JSON/Range datatype |
+| Operator | Description                                | Field type    |
+|----------|---------------------------------------------|---------------|
+| ILIKE    | Case-insensitive LIKE                        | `String`      |
+| CS       | Contains for JSON/Range datatype             | `String`      |
+| CD       | Contained for JSON/Range datatype            | `String`      |
+| OV       | Overlap (ranges having points in common)     | `HasRange<T>` |
+| SL       | Strictly left of                             | `HasRange<T>` |
+| SR       | Strictly right of                            | `HasRange<T>` |
+| NXR      | Does not extend to the right of              | `HasRange<T>` |
+| NXL      | Does not extend to the left of               | `HasRange<T>` |
+| ADJ      | Is adjacent to                               | `HasRange<T>` |
+
+```java
+public class PeriodSearch {
+    @FilterField(operation = PostgrestFilterOperation.OV.class, key = "period")
+    Range<LocalDate> period; // period=ov.[2024-01-01,2024-06-30]
+}
+```
 
 #### Bulk Operations
 

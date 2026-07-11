@@ -68,4 +68,28 @@ public final class Operators {
      * Contained operation for JSON/Range datatype
      */
     public static final String CONTAINED = "cd";
+    /**
+     * Overlap operation for Range/Array datatype (have points in common)
+     */
+    public static final String OVERLAP = "ov";
+    /**
+     * Strictly left of operation for Range datatype
+     */
+    public static final String STRICTLY_LEFT = "sl";
+    /**
+     * Strictly right of operation for Range datatype
+     */
+    public static final String STRICTLY_RIGHT = "sr";
+    /**
+     * Does not extend to the right of operation for Range datatype
+     */
+    public static final String NOT_EXTEND_RIGHT = "nxr";
+    /**
+     * Does not extend to the left of operation for Range datatype
+     */
+    public static final String NOT_EXTEND_LEFT = "nxl";
+    /**
+     * Is adjacent to operation for Range datatype
+     */
+    public static final String ADJACENT = "adj";
 }
