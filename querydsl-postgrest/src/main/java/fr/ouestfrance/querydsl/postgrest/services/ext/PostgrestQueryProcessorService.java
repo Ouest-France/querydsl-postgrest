@@ -23,7 +23,8 @@ public class PostgrestQueryProcessorService implements QueryDslProcessorService<
             new InMapper(), new LessThanEqualsMapper(), new LessThanMapper(),
             new LikeMapper(), new NotEqualsMapper(), new NotInMapper(),
             new CaseInsensitiveLikeMapper(), new ContainsMapper(), new ContainedMapper(),
-            new IsNullMapper(), new RangeMapper());
+            new IsNullMapper(), new RangeMapper(), new OverlapMapper(), new StrictlyLeftMapper(),
+            new StrictlyRightMapper(), new NotExtendRightMapper(), new NotExtendLeftMapper(), new AdjacentMapper());
 
     @Override
     public Mapper<Filter> getMapper(Class<? extends FilterOperation> operation) {
