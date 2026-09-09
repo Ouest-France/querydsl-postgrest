@@ -6,3 +6,4 @@
 *.iml
 .gitlab-ci.yml
 **/target/
+/.codegraph/

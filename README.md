@@ -65,7 +65,6 @@ Add the dependency :
 ```
 
 ```java
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
 import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
 import org.springframework.context.annotation.Bean;
@@ -102,7 +101,6 @@ Add the dependency :
 ```
 
 ```java
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
 import fr.ouestfrance.querydsl.postgrest.PostgrestRestTemplate;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -376,6 +374,30 @@ public class PeriodSearch {
 }
 ```
 
+#### Range serialization
+
+PostgreSQL range columns (`daterange`, `int4range`, `tsrange`, ...) are exposed by PostgREST as a
+single string literal. `PostgrestRangeModule` maps that literal to and from `Range`, so a
+`Range<LocalDate>` field reads and writes `"[2026-05-21,2026-09-01)"` instead of an object.
+
+The module is declared through `ServiceLoader`, so any mapper built with `findAndAddModules()` picks
+it up with no configuration :
+
+```java
+JsonMapper mapper = JsonMapper.builder().findAndAddModules().build();
+
+Range<LocalDate> period = mapper.readValue("\"[2026-05-21,2026-09-01)\"",
+        mapper.getTypeFactory().constructParametricType(Range.class, LocalDate.class));
+// period.getLower() = 2026-05-21, inclusive
+// period.getUpper() = 2026-09-01, exclusive
+```
+
+Otherwise register it explicitly with `.addModule(new PostgrestRangeModule())`. A square bracket
+marks an inclusive bound, a round one an exclusive bound, and an empty bound means unbounded
+(`"[2026-05-21,)"`). Bounds are converted by the Jackson (de)serializer registered for the bound
+type, so any type Jackson handles as a JSON string works. See the `fr.ouestfrance.querydsl.postgrest.jackson`
+package javadoc for the full format.
+
 #### Bulk Operations
 
 PostgREST allow to execute operations over a wide range items.
@@ -423,7 +445,6 @@ Supports of [rpc function calls](https://postgrest.org/en/v12/references/api/fun
 Its use a PostgrestRpcClient which use the PostgrestClient
 
 ```java
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
 import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
 import fr.ouestfrance.querydsl.postgrest.PostgrestRpcClient;
