@@ -34,7 +34,7 @@ Add the following dependency to your Maven project:
 Add the following dependency to your gradle project:
 
 ```groovy
-implementation 'fr.ouestfrance.querydsl:querydsl-postgrest-webclient-adapter:${querydsl-postgrest.version}'
+implementation "fr.ouestfrance.querydsl:querydsl-postgrest-webclient-adapter:$querydslPostgrestVersion"
 ```
 
 ### Configure PostgrestClient
@@ -49,7 +49,6 @@ cookies, ...) you need to deploy.
 #### Configuration example
 
 ```java
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
 import fr.ouestfrance.querydsl.postgrest.PostgrestWebClient;
 import org.springframework.context.annotation.Bean;
@@ -60,7 +59,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class PostgrestConfiguration {
 
     @Bean
-    public PostgrestClient podstgrestClient() {
+    public PostgrestClient postgrestClient() {
         String serviceUrl = "http://localhost:9000";
         WebClient webclient = WebClient.builder()
                 .baseUrl(serviceUrl)

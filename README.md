@@ -37,13 +37,14 @@ Add the following dependency to your Maven project:
 Add the following dependency to your gradle project:
 
 ```groovy
-implementation 'fr.ouestfrance.querydsl:querydsl-postgrest:${querydsl-postgrest.version}'
+implementation "fr.ouestfrance.querydsl:querydsl-postgrest:$querydslPostgrestVersion"
 ```
 
 ### Configure Postgrest
 
 QueryDsl postgrest provides class to simplify querying postgrest api using PostgrestClient,
-It actually provides by default WebClient adapter `PostgrestWebClient` adapter.
+It ships two ready to use adapters, `PostgrestWebClient` and `PostgrestRestTemplate`, each in its own
+artifact.
 
 It's really easy to create your own HttpClientAdapter (RestTemplate, OkHttpClient, HttpConnexion, ...) by
 implementing `PostgrestClient` interface.
@@ -75,7 +76,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class PostgrestConfiguration {
 
     @Bean
-    public PostgrestClient podstgrestClient() {
+    public PostgrestClient postgrestClient() {
         String serviceUrl = "http://localhost:9000";
         WebClient webclient = WebClient.builder()
                 .baseUrl(serviceUrl)
@@ -108,18 +109,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.DefaultUriBuilderFactory;
 
 @Configuration
 public class PostgrestConfiguration {
 
     @Bean
-    public PostgrestClient podstgrestClient() {
+    public PostgrestClient postgrestClient() {
         String serviceUrl = "http://localhost:9000";
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setUriTemplateHandler(new DefaultUriBuilderFactory(serviceUrl));
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory(HttpClients.createDefault()));
-        return PostgrestRestTemplate.of(webclient);
+        return PostgrestRestTemplate.of(restTemplate, serviceUrl);
     }
 }
 ```
@@ -135,6 +134,8 @@ with :
 - like filter on name key
 
 ```java
+import fr.ouestfrance.querydsl.FilterField;
+import fr.ouestfrance.querydsl.FilterOperation;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -151,6 +152,9 @@ public class UserSearch {
 *@Since 1.1.0 - Record Support*
 
 ```java
+import fr.ouestfrance.querydsl.FilterField;
+import fr.ouestfrance.querydsl.FilterOperation;
+
 public record UserSearch(
         @FilterField String id,
         @FilterField(operation = FilterOperation.LIKE.class) String name
@@ -162,13 +166,15 @@ public record UserSearch(
 
 To access data, you have to create Repository for your type and put `@PostgrestConfiguration` to specify extra data
 
-| Property      | Required | Format | Description                                                 | Example         |
-|---------------|----------|--------|-------------------------------------------------------------|-----------------|
-| resource      | O        | String | Resource name in the postgrest api                          | "users"         |
-| countStrategy | X        | String | Count strategy (exact, planned, estimated) default is exact | CountType.EXACT |
+| Property      | Required | Format      | Description                                                 | Example         |
+|---------------|----------|-------------|-------------------------------------------------------------|-----------------|
+| resource      | O        | `String`    | Resource name in the postgrest api                          | "users"         |
+| countStrategy | X        | `CountType` | Count strategy (exact, planned, estimated) default is exact | CountType.EXACT |
 
 ```java
 import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
+import org.springframework.stereotype.Repository;
 
 @Repository
 @PostgrestConfiguration(resource = "users")
@@ -183,17 +189,21 @@ public class UserRepository extends PostgrestRepository<User> {
 
 ##### PostgrestRepository functions
 
-| Method  | Return        | Parameters                                                  | Description                                                                                                                                                         |
-|---------|---------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| search  | `Page<T>`     | criteria : `Object`<br/>pageRequest : `Pageable` (optional) | Search request based on criteria and pagination                                                                                                                     |
-| findOne | `Optional<T>` | criteria : `Object`                                         | find one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria return more than one item                                                       |
-| getOne  | `T`           | criteria : `Object`                                         | get one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no entity                                                               |
-| post    | `T`           | value : `Object`                                            | post data                                                                                                                                                           |
-| post    | `List<T>`     | value : `List<Object>`                                      | post list of datas                                                                                                                                                  |
-| upsert  | `T`           | value : `Object`                                            | Insert or Update data. You can specify which properties form the unique constraint by adding @OnConflict annotation on your implementation of PostgrestRepository   |
-| upsert  | `List<T>`     | value : `List<Object>`                                      | Insert or Update datas. You can specify which properties form the unique constraint by adding @OnConflict annotation on your implementation of PostgrestRepository |
-| update  | `List<T>`     | criteria : `Object`<br/>value: `Object`                     | Update entities found by criterias                                                                                                                                  |
-| delete  | `List<T>`     | criteria : `Object`                                         | Delete entities found by the criteria                                                                                                                               |
+| Method         | Return             | Parameters                                                                      | Description                                                                                                                                                       |
+|----------------|--------------------|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| search         | `Page<T>`          | criteria : `Object`<br/>pageRequest : `Pageable` (optional)                     | Search request based on criteria and pagination                                                                                                                   |
+| searchAsStream | `Stream<T>`        | criteria : `Object`<br/>pageSize : `int` and sort : `Sort` (optional)           | Stream all matching entities, fetching them page by page                                                                                                          |
+| count          | `long`             | criteria : `Object` (optional)                                                  | Count the entities matching the criteria, all of them when no criteria is given                                                                                   |
+| findOne        | `Optional<T>`      | criteria : `Object`                                                             | find one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria return more than one item                                                      |
+| getOne         | `T`                | criteria : `Object`                                                             | get one entity based on criteria<br/>Raise `PostgrestRequestException` if criteria returned no entity                                                              |
+| post           | `T`                | value : `Object`                                                                | post data                                                                                                                                                         |
+| post           | `BulkResponse<T>`  | values : `List<Object>`<br/>options : `BulkOptions` (optional)                  | post list of datas                                                                                                                                                |
+| upsert         | `T`                | value : `Object`                                                                | Insert or Update data. You can specify which properties form the unique constraint by adding @OnConflict annotation on your implementation of PostgrestRepository  |
+| upsert         | `BulkResponse<T>`  | values : `List<Object>`<br/>options : `BulkOptions` (optional)                  | Insert or Update datas. You can specify which properties form the unique constraint by adding @OnConflict annotation on your implementation of PostgrestRepository |
+| patch          | `BulkResponse<T>`  | criteria : `Object`<br/>body : `Object`<br/>options : `BulkOptions` (optional)  | Update entities found by criterias                                                                                                                                |
+| delete         | `BulkResponse<T>`  | criteria : `Object`<br/>options : `BulkOptions` (optional)                      | Delete entities found by the criteria                                                                                                                             |
+
+`BulkResponse<T>` extends `ArrayList<T>` and carries the affected rows count of the operation.
 
 ### Using the repository
 
@@ -231,7 +241,8 @@ public class UserService {
     public List<User> findByName(String name) {
         UserSearch search = new UserSearch();
         search.setName(name);
-        return userRepository.search(search);
+        // search returns a Page<User>, which is an Iterable exposing its content through getData()
+        return userRepository.search(search).getData();
     }
 }
 ```
@@ -247,19 +258,27 @@ This can be defined by annotation `@Select`
 Select annotation can be added on the Repository but also to the criteria object that allow you to add specific
 selection for filtering
 
-| Property | Required | Format | Description              | Example     |
-|----------|----------|--------|--------------------------|-------------|
-| value    | O        | String | select value tu add      | "firstname" |
-| alias    | X        | String | renaming column or alias | "fullName"  |
+| Property | Required | Format     | Description                                        | Example     |
+|----------|----------|------------|----------------------------------------------------|-------------|
+| value    | O        | `String[]` | select values to add                               | "firstname" |
+| alias    | X        | `String`   | renaming column or alias                           | "fullName"  |
+| only     | X        | `boolean`  | select only the specified fields, default is false | true        |
 
 You can add extra selection by adding `@Select` annotation.
 In this example there is an inner join on `Posts.author` and selecting only `firstName` and `lastName`
 
 ```java
+import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
+import fr.ouestfrance.querydsl.postgrest.annotations.Select;
 
 @PostgrestConfiguration(resource = "posts")
 @Select(alias = "author", value = "author!inner(firstName, lastName)")
 public class PostRepository extends PostgrestRepository<Post> {
+
+    public PostRepository(PostgrestClient client) {
+        super(client);
+    }
 
 }
 ```
@@ -294,22 +313,54 @@ official [PostgREST Documentation](https://postgrest.org/en/stable/references/ap
 annotation over your Repository
 
 ```java
+import fr.ouestfrance.querydsl.postgrest.PostgrestClient;
+import fr.ouestfrance.querydsl.postgrest.annotations.Header;
+import fr.ouestfrance.querydsl.postgrest.annotations.PostgrestConfiguration;
+import fr.ouestfrance.querydsl.postgrest.model.Prefer;
+
+import static fr.ouestfrance.querydsl.postgrest.annotations.Header.Method.UPSERT;
+
+@PostgrestConfiguration(resource = "posts")
 // Return representation object for all functions
 @Header(key = Prefer.HEADER, value = Prefer.Return.REPRESENTATION)
 // Make Upsert using POST with Merge_Duplicated value
 @Header(key = Prefer.HEADER, value = Prefer.Resolution.MERGE_DUPLICATES, methods = UPSERT)
 public class PostRepository extends PostgrestRepository<Post> {
+
+    public PostRepository(PostgrestClient client) {
+        super(client);
+    }
 }
 ```
 ##### Upserts
+
+If you want to specify which properties form your unique constraint, you don't need to write the
+`resolution=merge-duplicates` header anymore :
+
 ```java
-// If you want to specify which properties form your unique constraint, you don't need to write this header anymore :
 @Header(key = Prefer.HEADER, value = Prefer.Resolution.MERGE_DUPLICATES, methods = UPSERT)
+@PostgrestConfiguration(resource = "posts")
 public class PostRepository extends PostgrestRepository<Post> {
+
+    public PostRepository(PostgrestClient client) {
+        super(client);
+    }
 }
-//just annotate your implem of Repository with @OnConflict and specify wich fields form your unique constraint :
+```
+
+Just annotate your implementation of Repository with `@OnConflict` and specify which fields form
+your unique constraint :
+
+```java
+import fr.ouestfrance.querydsl.postgrest.annotations.OnConflict;
+
 @OnConflict(columnNames = {"codeOrigine", "referencePersonne", "uuidAdresse"})
+@PostgrestConfiguration(resource = "posts")
 public class PostRepository extends PostgrestRepository<Post> {
+
+    public PostRepository(PostgrestClient client) {
+        super(client);
+    }
 }
 ```
 
@@ -319,6 +370,12 @@ Any chance you want to have a more complex condition, it's possible to make mixi
 using `groupName`
 
 ```java
+import fr.ouestfrance.querydsl.FilterField;
+import fr.ouestfrance.querydsl.FilterFields;
+import fr.ouestfrance.querydsl.FilterOperation;
+import fr.ouestfrance.querydsl.postgrest.annotations.Select;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -338,6 +395,8 @@ public class PostRequestWithSize {
 or on multiple fields
 
 ```java
+import fr.ouestfrance.querydsl.FilterField;
+
 public class PostRequestWithAuthorOrSubject {
 
     // subject = $subject OR name= $name
@@ -368,6 +427,12 @@ extends FilterOperation with
 | ADJ      | Is adjacent to                               | `HasRange<T>` |
 
 ```java
+import fr.ouestfrance.querydsl.FilterField;
+import fr.ouestfrance.querydsl.postgrest.PostgrestFilterOperation;
+import fr.ouestfrance.querydsl.postgrest.model.Range;
+
+import java.time.LocalDate;
+
 public class PeriodSearch {
     @FilterField(operation = PostgrestFilterOperation.OV.class, key = "period")
     Range<LocalDate> period; // period=ov.[2024-01-01,2024-06-30]
@@ -404,6 +469,7 @@ PostgREST allow to execute operations over a wide range items.
 QueryDSL-Postgrest allow to handle pagination fixed by user or fixed by the postgREST max page
 
 ```java
+import fr.ouestfrance.querydsl.postgrest.model.BulkOptions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -418,11 +484,11 @@ public class UserService {
         UserSearch criteria = new UserSearch();
         // Will invalidate all passwords with chunk of 1000 users
         userRepository.patch(criteria, new UserPatchPassword(false), BulkOptions.builder()
-                .countsOnly(true)
+                .countOnly(true)
                 .pageSize(1000)
                 .build());
-        // Generate n calls of 
-        // PATCH /users {"password_validation": false }  -H Range 0-999
+        // Generate n calls of
+        // PATCH /users {"password_validation": false }  -H Range-Unit items
         // PATCH /users {"password_validation": false }  -H Range 1000-1999
         // PATCH /users {"password_validation": false }  -H Range 2000-2999
         // etc since the users are all updated
@@ -430,10 +496,12 @@ public class UserService {
 }
 ```
 
-| Option     | Default Value | Description                                                               |
-|------------|---------------|---------------------------------------------------------------------------|
-| countsOnly | false         | Place return=headers-only if true, otherwise keep default return          |  
-| pageSize   | -1            | Specify the size of the chunk, otherwise let postgrest activate its limit |
+The first call carries the `Range-Unit` header only, the next ones page through the remaining items.
+
+| Option    | Default Value | Description                                                               |
+|-----------|---------------|---------------------------------------------------------------------------|
+| countOnly | false         | Place return=headers-only if true, otherwise keep default return          |  
+| pageSize  | -1            | Specify the size of the chunk, otherwise let postgrest activate its limit |
 
 > Bulk Operations are allowed on  `Post` ,`Patch`, `Delete` and `Upsert`
 
@@ -470,43 +538,61 @@ public class PostgrestConfiguration {
 
 then you can call your rpc method using this call 
 
+Every `executeRpc` overload returns an `Optional` of the requested class.
+
 ```java
-public class Example{
+import fr.ouestfrance.querydsl.FilterField;
+import fr.ouestfrance.querydsl.FilterOperation;
+import fr.ouestfrance.querydsl.postgrest.PostgrestRpcClient;
+import fr.ouestfrance.querydsl.postgrest.annotations.Select;
+
+import java.util.Arrays;
+import java.util.List;
+
+public class Example {
     private PostgrestRpcClient rpcClient;
-    
-    public List<Coordinate> getCoordinates(){
+
+    public List<Coordinate> getCoordinates() {
         // call getCoordinates_v1 and expect to return a list of Coordinates
-        return rpcClient.exectureRpc("getCoordinates_v1", TypeUtils.parameterize(List.class, Coordinate.class));
+        return rpcClient.executeRpc("getCoordinates_v1", Coordinate[].class)
+                .map(Arrays::asList)
+                .orElseGet(List::of);
         // CALL => ${base_url}/rpc/getCoordinates_v1
     }
-    
-    public Coordinate getCoordinate(Point point){
+
+    public Coordinate getCoordinate(Point point) {
         // call findClosestCoordinate_v1 with body {x:?, y:?} 
         // expect to return a single coordinate
-        return rpcClient.executeRpc("findClosestCoordinate_v1", point, Coordinate.class);
+        return rpcClient.executeRpc("findClosestCoordinate_v1", point, Coordinate.class)
+                .orElseThrow();
         // CALL => ${base_url}/rpc/findClosestCoordinate_v1
         // => with body {x: point.x, y: point.y}
     }
-    
-    public SimpleCoordinate getCoordinateX(Point point){
+
+    public SimpleCoordinate getCoordinateX(Point point) {
         // call findClosestCoordinate_v1 with body {x:?, y:?}
         // add Criteria that add select=x,y and z=gte.0.0
         // and return the result as a SimpleCoordinate class
-        return rpcClient.executeRpc("findClosestCoordinate_v1", new CoordinateCriteria(0.0), point, SimpleCoordinate.class);
+        return rpcClient.executeRpc("findClosestCoordinate_v1", new CoordinateCriteria(0.0f), point,
+                        SimpleCoordinate.class)
+                .orElseThrow();
         // CALL => ${base_url}/rpc/findClosestCoordinate_v1?z=gte.0.0&select=x,y
         // => with body {x: point.x, y: point.y}
     }
-    
-    
+
+
     @Select({"x", "y"})
     record CoordinateCriteria(
             @FilterField(key = "z", operation = FilterOperation.GTE.class)
-            private Float z
-    ){}
-    
-    record SimpleCoordinate(Float x, Float y){}
+            Float z
+    ) {}
+
+    record SimpleCoordinate(Float x, Float y) {}
 }
 ```
+
+To get a parameterized return type such as a `List<Coordinate>` without going through an array, the
+lower level `PostgrestClient.rpc(String, Map, Object, Type)` accepts a `java.lang.reflect.Type`.
 
 ## Need Help ?
 
