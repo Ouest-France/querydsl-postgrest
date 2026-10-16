@@ -2,51 +2,40 @@ package fr.ouestfrance.querydsl.postgrest;
 
 import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.util.ClassUtils;
-import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Method;
 import java.util.Optional;
 
 /**
  * Default {@link ExceptionHandler} : a 404 is translated to a {@link PostgrestRequestException},
  * every other exception is kept as is.
- * Works with RestClient and, when spring-webflux is on the classpath, with WebClient.
+ * The status and the body are read by reflection on {@code getStatusCode()} and {@code getResponseBodyAsString()},
+ * so it works with any client exception exposing them (RestClient, WebClient, ...) without depending on its classes.
  */
 public class HttpStatusExceptionHandler implements ExceptionHandler {
 
-    private static final boolean WEBCLIENT_PRESENT = ClassUtils.isPresent(
-            "org.springframework.web.reactive.function.client.WebClientResponseException",
-            HttpStatusExceptionHandler.class.getClassLoader());
+    private static final String STATUS_METHOD = "getStatusCode";
+    private static final String BODY_METHOD = "getResponseBodyAsString";
 
     @Override
     public RuntimeException handle(String resource, RuntimeException exception) {
-        boolean notFound = statusOf(exception).filter(HttpStatusCode::is4xxClientError)
+        boolean notFound = invoke(exception, STATUS_METHOD, HttpStatusCode.class)
                 .map(status -> status.isSameCodeAs(HttpStatusCode.valueOf(404)))
                 .orElse(false);
         if (notFound) {
-            return new PostgrestRequestException(resource, exception.getMessage(), exception, bodyOf(exception));
+            String body = invoke(exception, BODY_METHOD, String.class).orElse(null);
+            return new PostgrestRequestException(resource, exception.getMessage(), exception, body);
         }
         return exception;
     }
 
-    private static Optional<HttpStatusCode> statusOf(RuntimeException exception) {
-        if (exception instanceof RestClientResponseException restException) {
-            return Optional.of(restException.getStatusCode());
+    private static <T> Optional<T> invoke(Object target, String methodName, Class<T> type) {
+        Method method = ReflectionUtils.findMethod(target.getClass(), methodName);
+        if (method == null || !type.isAssignableFrom(method.getReturnType())) {
+            return Optional.empty();
         }
-        if (WEBCLIENT_PRESENT && exception instanceof WebClientResponseException webException) {
-            return Optional.of(webException.getStatusCode());
-        }
-        return Optional.empty();
-    }
-
-    private static String bodyOf(RuntimeException exception) {
-        if (exception instanceof RestClientResponseException restException) {
-            return restException.getResponseBodyAsString();
-        }
-        if (WEBCLIENT_PRESENT && exception instanceof WebClientResponseException webException) {
-            return webException.getResponseBodyAsString();
-        }
-        return null;
+        ReflectionUtils.makeAccessible(method);
+        return Optional.ofNullable(type.cast(ReflectionUtils.invokeMethod(method, target)));
     }
 }
