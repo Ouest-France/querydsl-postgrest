@@ -16,7 +16,7 @@ jobs:
           ref: main
       - uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
           gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}

@@ -5,7 +5,7 @@
         <groupId>fr.ouestfrance.querydsl</groupId>
         <artifactId>querydsl-postgrest-bom</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>2.0.5-SNAPSHOT</version>
+        <version>3.0.0-SNAPSHOT</version>
     </parent>
     <name>querydsl-postgrest</name>
     <artifactId>querydsl-postgrest</artifactId>
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>3.0.1</version>
+            <version>3.2.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

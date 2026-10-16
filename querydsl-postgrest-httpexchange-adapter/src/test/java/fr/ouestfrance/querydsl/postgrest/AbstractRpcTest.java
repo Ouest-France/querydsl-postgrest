@@ -1,0 +1,98 @@
+package fr.ouestfrance.querydsl.postgrest;
+
+import fr.ouestfrance.querydsl.postgrest.app.Post;
+import fr.ouestfrance.querydsl.postgrest.app.PostRequestWithSelect;
+import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
+import org.apache.commons.lang3.reflect.TypeUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockserver.client.MockServerClient;
+import org.mockserver.model.HttpRequest;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
+
+import static fr.ouestfrance.querydsl.postgrest.TestUtils.jsonResponse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+abstract class AbstractRpcTest {
+
+    private PostgrestRpcClient rpcClient;
+
+    protected abstract HttpServiceProxyFactory proxyFactory();
+
+    @BeforeEach
+    void beforeEach(MockServerClient client) {
+        client.reset();
+        PostgrestHttpExchange postgrestClient = PostgrestHttpExchange.of(proxyFactory(), "http://localhost:8007");
+        rpcClient = new PostgrestRpcClient(postgrestClient);
+    }
+
+    @Test
+    void shouldCallRpc(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1"))
+                .respond(jsonResponse("""
+                        {"id": 1, "title": "test"}
+                        """));
+        Post result = rpcClient.executeRpc("testV1", Post.class).orElse(null);
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldCallRpcWithCriteria(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1")
+                        .withQueryStringParameter("userId", "eq.1")
+                        .withQueryStringParameter("select", "title,userId"))
+                .respond(jsonResponse("""
+                        {"id": 1, "title": "test"}
+                        """));
+
+        PostRequestWithSelect criteria = new PostRequestWithSelect();
+        criteria.setUserId(1);
+        Post result = rpcClient.executeRpc("testV1", criteria, null, Post.class).orElse(null);
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldCallRpcWithCriteriaResultIsList(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1")
+                        .withQueryStringParameter("userId", "eq.1")
+                        .withQueryStringParameter("select", "title,userId"))
+                .respond(jsonResponse("""
+                        [{"id": 1, "title": "test"}]
+                        """));
+
+        PostRequestWithSelect criteria = new PostRequestWithSelect();
+        criteria.setUserId(1);
+        Post[] result = rpcClient.executeRpc("testV1", criteria, null, Post[].class).orElse(null);
+        assertNotNull(result);
+    }
+
+
+    @Test
+    void shouldRaiseExceptionOn404(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1"))
+                .respond(jsonResponse("""
+                        {
+                            "code":"PGRST202",
+                            "details":"Searched for the function public_repository_depositaire.testV1 with parameters coordinates, type or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.",
+                            "hint":null,
+                            "message":"Could not find the function public_repository_depositaire.testV1(coordinates, type) in the schema cache"
+                        }
+                        """).withStatusCode(404));
+        PostgrestRequestException exception = assertThrows(PostgrestRequestException.class, () -> rpcClient.executeRpc("testV1", Post.class));
+        assertNotNull(exception);
+        assertNotNull(exception.getResponseBody());
+    }
+
+    @Test
+    void shouldUseCustomExceptionHandler(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1"))
+                .respond(jsonResponse("{}").withStatusCode(500));
+        PostgrestHttpExchange postgrestClient = PostgrestHttpExchange.of(proxyFactory(), "http://localhost:8007",
+                tools.jackson.databind.json.JsonMapper.builder().build(),
+                (resource, exception) -> new IllegalStateException(resource));
+        PostgrestRpcClient custom = new PostgrestRpcClient(postgrestClient);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> custom.executeRpc("testV1", Post.class));
+        org.junit.jupiter.api.Assertions.assertEquals("rpc/testV1", exception.getMessage());
+    }
+}
