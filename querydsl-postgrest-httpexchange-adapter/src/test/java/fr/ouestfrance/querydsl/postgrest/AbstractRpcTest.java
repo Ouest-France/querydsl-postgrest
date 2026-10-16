@@ -83,4 +83,16 @@ abstract class AbstractRpcTest {
         assertNotNull(exception);
         assertNotNull(exception.getResponseBody());
     }
+
+    @Test
+    void shouldUseCustomExceptionHandler(MockServerClient client) {
+        client.when(HttpRequest.request().withPath("/rpc/testV1"))
+                .respond(jsonResponse("{}").withStatusCode(500));
+        PostgrestHttpExchange postgrestClient = PostgrestHttpExchange.of(proxyFactory(), "http://localhost:8007",
+                tools.jackson.databind.json.JsonMapper.builder().build(),
+                (resource, exception) -> new IllegalStateException(resource));
+        PostgrestRpcClient custom = new PostgrestRpcClient(postgrestClient);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> custom.executeRpc("testV1", Post.class));
+        org.junit.jupiter.api.Assertions.assertEquals("rpc/testV1", exception.getMessage());
+    }
 }

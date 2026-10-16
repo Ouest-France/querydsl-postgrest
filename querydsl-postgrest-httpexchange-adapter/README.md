@@ -69,6 +69,13 @@ public PostgrestClient postgrestClient() {
 A custom `tools.jackson.databind.json.JsonMapper` can be given to read responses :
 `PostgrestHttpExchange.of(factory, url, jsonMapper)`.
 
+#### Error handling
+
+On `rpc` calls, the exception raised by the http client goes through an `ExceptionHandler`
+(`(resource, exception) -> RuntimeException`). By default (`null`), `HttpStatusExceptionHandler` translates a 404 to a
+`PostgrestRequestException` and keeps any other exception as is. Pass your own as last argument of
+`PostgrestHttpExchange.of(...)` to change that behavior.
+
 ## Need Help ?
 
 If you need help with the library please start a new thread QA / Issue on github

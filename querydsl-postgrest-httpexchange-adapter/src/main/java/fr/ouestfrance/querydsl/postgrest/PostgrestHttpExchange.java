@@ -3,15 +3,9 @@ package fr.ouestfrance.querydsl.postgrest;
 import fr.ouestfrance.querydsl.postgrest.model.BulkResponse;
 import fr.ouestfrance.querydsl.postgrest.model.HeaderRange;
 import fr.ouestfrance.querydsl.postgrest.model.RangeResponse;
-import fr.ouestfrance.querydsl.postgrest.model.exceptions.PostgrestRequestException;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.databind.json.JsonMapper;
@@ -28,18 +22,23 @@ import static fr.ouestfrance.querydsl.postgrest.ResponseUtils.toBulkResponse;
  * PostgrestClient built on a {@link PostgrestExchange} http interface.
  * The caller chooses the http client (RestClient, WebClient, ...) by creating the {@link HttpServiceProxyFactory}.
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class PostgrestHttpExchange implements PostgrestClient {
-
-    private static final boolean WEBCLIENT_PRESENT = ClassUtils.isPresent(
-            "org.springframework.web.reactive.function.client.WebClientResponseException",
-            PostgrestHttpExchange.class.getClassLoader());
 
     private final PostgrestExchange exchange;
 
     private final String baseUrl;
 
     private final JsonResponseReader reader;
+
+    private final ExceptionHandler exceptionHandler;
+
+    private PostgrestHttpExchange(PostgrestExchange exchange, String baseUrl, JsonResponseReader reader,
+                                  ExceptionHandler exceptionHandler) {
+        this.exchange = exchange;
+        this.baseUrl = baseUrl;
+        this.reader = reader;
+        this.exceptionHandler = exceptionHandler != null ? exceptionHandler : new HttpStatusExceptionHandler();
+    }
 
     /**
      * Build a client from an http interface
@@ -49,7 +48,19 @@ public class PostgrestHttpExchange implements PostgrestClient {
      * @return concrete client
      */
     public static PostgrestHttpExchange of(PostgrestExchange exchange, String baseUrl) {
-        return new PostgrestHttpExchange(exchange, baseUrl, new JsonResponseReader());
+        return of(exchange, baseUrl, null);
+    }
+
+    /**
+     * Build a client from an http interface with a specific exception handler
+     *
+     * @param exchange         http interface
+     * @param baseUrl          baseUrl of postgrest
+     * @param exceptionHandler exception handler, default one based on http status if null
+     * @return concrete client
+     */
+    public static PostgrestHttpExchange of(PostgrestExchange exchange, String baseUrl, ExceptionHandler exceptionHandler) {
+        return new PostgrestHttpExchange(exchange, baseUrl, new JsonResponseReader(), exceptionHandler);
     }
 
     /**
@@ -72,8 +83,22 @@ public class PostgrestHttpExchange implements PostgrestClient {
      * @return concrete client
      */
     public static PostgrestHttpExchange of(HttpServiceProxyFactory factory, String baseUrl, JsonMapper jsonMapper) {
+        return of(factory, baseUrl, jsonMapper, null);
+    }
+
+    /**
+     * Build a client from a proxy factory with a specific json mapper and exception handler
+     *
+     * @param factory          proxy factory (RestClientAdapter, WebClientAdapter, ...)
+     * @param baseUrl          baseUrl of postgrest
+     * @param jsonMapper       mapper used to read responses
+     * @param exceptionHandler exception handler, default one based on http status if null
+     * @return concrete client
+     */
+    public static PostgrestHttpExchange of(HttpServiceProxyFactory factory, String baseUrl, JsonMapper jsonMapper,
+                                           ExceptionHandler exceptionHandler) {
         return new PostgrestHttpExchange(factory.createClient(PostgrestExchange.class), baseUrl,
-                new JsonResponseReader(jsonMapper));
+                new JsonResponseReader(jsonMapper), exceptionHandler);
     }
 
     @Override
@@ -117,10 +142,7 @@ public class PostgrestHttpExchange implements PostgrestClient {
             ResponseEntity<byte[]> response = exchange.post(getUri(rpcName, map), Map.of(), body);
             return reader.read(response.getBody(), type);
         } catch (RuntimeException exception) {
-            if (isNotFound(exception)) {
-                throw new PostgrestRequestException(rpcName, exception.getMessage(), exception, responseBody(exception));
-            }
-            throw exception;
+            throw exceptionHandler.handle(rpcName, exception);
         }
     }
 
@@ -130,20 +152,6 @@ public class PostgrestHttpExchange implements PostgrestClient {
 
     private static Map<String, List<String>> nonNull(Map<String, List<String>> headers) {
         return headers == null ? Map.of() : headers;
-    }
-
-    private static boolean isNotFound(RuntimeException exception) {
-        if (exception instanceof HttpStatusCodeException statusException) {
-            return statusException.getStatusCode().isSameCodeAs(HttpStatusCode.valueOf(404));
-        }
-        return WEBCLIENT_PRESENT && WebClientErrors.isNotFound(exception);
-    }
-
-    private static String responseBody(RuntimeException exception) {
-        if (exception instanceof HttpStatusCodeException statusException) {
-            return statusException.getResponseBodyAsString();
-        }
-        return WEBCLIENT_PRESENT ? WebClientErrors.responseBody(exception) : null;
     }
 
     /**
