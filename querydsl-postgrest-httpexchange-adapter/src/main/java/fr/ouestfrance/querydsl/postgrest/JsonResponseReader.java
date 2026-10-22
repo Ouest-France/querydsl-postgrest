@@ -35,7 +35,9 @@ public class JsonResponseReader {
             return List.of();
         }
         JavaType type = mapper.getTypeFactory().constructCollectionType(List.class, clazz);
-        return mapper.readValue(body, type);
+        List<T> list = mapper.readValue(body, type);
+        // a json "null" body is an empty result, as with the webclient adapter
+        return list == null ? List.of() : list;
     }
 
     /**
